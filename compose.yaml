@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rental_room
+      POSTGRES_USER: rental
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rental_local}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rental -d rental_room"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://postgres:5432/rental_room
+      DB_USERNAME: rental
+      DB_PASSWORD: ${DB_PASSWORD:-rental_local}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-admin_local_2026}
+      JWT_SECRET: ${JWT_SECRET:-local-development-jwt-key-change-before-deployment-2026}
+      BANK_BIN: ${BANK_BIN:-}
+      BANK_ACCOUNT: ${BANK_ACCOUNT:-}
+      BANK_NAME: ${BANK_NAME:-}
+      METER_IMAGES_ROOT: /app/data/meter-images
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - meter_images:/app/data/meter-images
+volumes:
+  postgres_data:
+  meter_images:

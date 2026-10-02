@@ -1,0 +1,22 @@
+package com.rental.rental_room.auth;
+import com.rental.rental_room.common.BaseEntity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+@Getter @Setter @NoArgsConstructor
+@Entity @Table(name = "user_accounts")
+public class UserAccount extends BaseEntity {
+    @Column(nullable = false, unique = true, length = 100)
+    private String username;
+
+    @Column(nullable = false, length = 100)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private UserRole role;
+
+    @Column(nullable = false)
+    private boolean enabled;
+}
