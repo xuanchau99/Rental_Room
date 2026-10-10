@@ -1,13 +1,13 @@
 package com.rental.rental_room.payment;
 
 import com.rental.rental_room.common.BaseEntity;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import com.rental.rental_room.invoice.Invoice;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -15,21 +15,23 @@ import java.time.Instant;
 @Entity
 @Table(name = "payments")
 public class Payment extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "invoice_id", nullable = false)
-    private Invoice invoice;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "invoice_id", nullable = false)
+  private Invoice invoice;
 
-    @Column(nullable = false, precision = 14, scale = 2)
-    private BigDecimal amount;
+  @Column(nullable = false, precision = 14, scale = 2)
+  private BigDecimal amount;
 
-    @Column(nullable = false)
-    private Instant paidAt;
+  @Column(nullable = false)
+  private Instant paidAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private PaymentMethod method;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  private PaymentMethod method;
 
-    @Column(length = 100)
-    private String reference;
-    @Column(length = 1000) private String note;
+  @Column(length = 100)
+  private String reference;
+
+  @Column(length = 1000)
+  private String note;
 }

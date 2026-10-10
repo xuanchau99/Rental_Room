@@ -1,2 +1,6 @@
 package com.rental.rental_room.auth;
-public enum UserRole { OWNER, STAFF }
+
+public enum UserRole {
+  OWNER,
+  STAFF
+}

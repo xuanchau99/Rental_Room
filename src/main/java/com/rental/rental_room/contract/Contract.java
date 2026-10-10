@@ -1,14 +1,14 @@
 package com.rental.rental_room.contract;
 
 import com.rental.rental_room.common.BaseEntity;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import com.rental.rental_room.room.Room;
 import com.rental.rental_room.tenant.Tenant;
-import java.time.LocalDate;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -16,33 +16,42 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "contracts")
 public class Contract extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "room_id", nullable = false)
+  private Room room;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "tenant_id", nullable = false)
+  private Tenant tenant;
 
-    @Column(nullable = false)
-    private LocalDate startDate;
+  @Column(nullable = false)
+  private LocalDate startDate;
 
-    @Column()
-    private LocalDate endDate;
+  @Column() private LocalDate endDate;
 
-    @Column(nullable = false, precision = 14, scale = 2)
-    private BigDecimal monthlyRent;
+  @Column(nullable = false, precision = 14, scale = 2)
+  private BigDecimal monthlyRent;
 
-    @Column(nullable = false, precision = 14, scale = 2)
-    private BigDecimal depositAmount;
+  @Column(nullable = false, precision = 14, scale = 2)
+  private BigDecimal depositAmount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private ContractStatus status;
-    @Column(nullable = false) private int paymentDueDay;
-    @Column(length = 1000) private String note;
-    @Column(nullable = false, precision = 14, scale = 2) private BigDecimal electricityPrice;
-    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30)
-    private com.rental.rental_room.water.WaterCalculationType waterCalculationType;
-    @Column(nullable = false, precision = 14, scale = 2) private BigDecimal waterPrice;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  private ContractStatus status;
+
+  @Column(nullable = false)
+  private int paymentDueDay;
+
+  @Column(length = 1000)
+  private String note;
+
+  @Column(nullable = false, precision = 14, scale = 2)
+  private BigDecimal electricityPrice;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  private com.rental.rental_room.water.WaterCalculationType waterCalculationType;
+
+  @Column(nullable = false, precision = 14, scale = 2)
+  private BigDecimal waterPrice;
 }

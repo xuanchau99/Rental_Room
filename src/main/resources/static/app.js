@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const state = {tokens: null, rooms: [], tenants: [], contracts: [], services: [], worksheet: [], electricity: [], water: [], invoices: [], dashboard: null};
+const state = {tokens: null, properties: [], rooms: [], tenants: [], contracts: [], services: [], worksheet: [], electricity: [], water: [], invoices: [], reminders: [], dashboard: null};
 const money = (value) => `${new Intl.NumberFormat("vi-VN", {maximumFractionDigits: 2}).format(Number(value || 0))} đ`;
 const today = () => {
   const d = new Date();
@@ -88,12 +88,12 @@ function assertPeriod() {
 async function reload() {
   const selected = assertPeriod();
   const params = query({...selected, size: 100});
-  const [rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices] = await Promise.all([
-    api("/rooms?size=100"), api("/tenants?size=100"), api("/contracts?size=100"), api("/services?size=100"),
+  const [properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders] = await Promise.all([
+    api("/properties"), api("/rooms?size=100"), api("/tenants?size=100"), api("/contracts?size=100"), api("/services?size=100"),
     api(`/dashboard?${query(selected)}`), api(`/meter-workflow?${query(selected)}`),
-    api(`/electricity-readings?${params}`), api(`/water-readings?${params}`), api(`/invoices?${params}`)
+    api(`/electricity-readings?${params}`), api(`/water-readings?${params}`), api(`/invoices?${params}`), api("/reminders?dueWithinDays=7")
   ]);
-  Object.assign(state, {rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices});
+  Object.assign(state, {properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders});
   render();
 }
 function emptyRow(body, columns, message) {
@@ -280,7 +280,7 @@ function renderInvoices() {
     row.append(actions); body.append(row);
   });
 }
-function render() { renderOverview(); renderPeople(); renderMeters(); renderInvoices(); }
+function render() { renderOverview(); renderPeople(); renderMeters(); renderInvoices(); window.renderExtras?.(); }
 
 $("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -344,13 +344,15 @@ $("contract-form").addEventListener("submit", async (event) => {
     const wifi = wifiSubscription(Number($("contract-wifi").value));
     return api("/contracts", {method: "POST", body: {
       roomId: Number($("contract-room").value), tenantId: Number($("contract-tenant").value),
-      startDate: $("contract-start").value, endDate: null, monthlyRent: Number($("contract-rent").value),
-      depositAmount: Number($("contract-deposit").value), status: "ACTIVE", paymentDueDay: Number($("contract-due").value),
-      note: null, electricityPrice: Number($("contract-electric").value),
+      startDate: $("contract-start").value, endDate: $("contract-end").value || null, monthlyRent: Number($("contract-rent").value),
+      depositAmount: Number($("contract-deposit").value), status: $("contract-status").value, paymentDueDay: Number($("contract-due").value),
+      note: $("contract-note").value.trim() || null, electricityPrice: Number($("contract-electric").value),
       waterCalculationType: $("contract-water-mode").value, waterPrice: Number($("contract-water-price").value),
       services: wifi ? [wifi] : []
     }});
-  }, "Đã tạo hợp đồng cùng khoản Wi-Fi và chuyển phòng sang Đang thuê.");
+  }, () => $("contract-status").value === "PENDING"
+    ? "Đã tạo hợp đồng chờ; phòng sẽ được thuê khi kích hoạt."
+    : "Đã tạo hợp đồng và chuyển phòng sang Đang thuê.");
   if (result) { event.currentTarget.reset(); $("contract-start").value = today(); await perform(button, reload); }
 });
 $("generate-button").addEventListener("click", async (event) => {
@@ -365,7 +367,8 @@ $("payment-form").addEventListener("submit", async (event) => {
   const id = event.currentTarget.dataset.invoiceId;
   const result = await perform(button, () => api(`/invoices/${id}/payments`, {method: "POST", body: {
     amount: Number($("payment-amount").value), paymentMethod: $("payment-method").value,
-    paymentDate: new Date().toISOString(), referenceCode: $("payment-reference").value.trim() || null, note: null
+    paymentDate: new Date().toISOString(), referenceCode: $("payment-reference").value.trim() || null,
+    note: $("payment-note").value.trim() || null
   }}), "Đã ghi nhận thanh toán.");
   if (result) { event.currentTarget.reset(); event.currentTarget.hidden = true; await perform(button, reload); }
 });

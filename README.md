@@ -14,11 +14,15 @@ docker compose up -d --build --wait
 Compose chạy PostgreSQL và backend. Mở giao diện HTML tại
 http://localhost:8080/; mở Swagger tại http://localhost:8080/swagger-ui.html.
 Đăng nhập trên giao diện bằng tài khoản OWNER ở dưới. Trang HTML có dashboard,
-phòng, khách thuê, tạo hợp đồng, nhập điện nước, tạo hóa đơn và ghi thanh toán.
+quản lý dãy/phòng/khách/dịch vụ, hợp đồng và người ở, tiền cọc, chỉ số điện nước,
+ảnh đồng hồ, hóa đơn, thanh toán và nhắc nợ. Trong tab Hóa đơn có nút tải PDF
+từng hóa đơn, xuất Excel theo kỳ, xem QR chuyển khoản và lịch sử thanh toán.
 Khi tạo hợp đồng, nhập giá Wi-Fi/tháng nếu có (0 nghĩa là không thu). Với hợp
 đồng đã tồn tại, dùng mục “Cập nhật Wi-Fi” tại tab Phòng & khách; giá mới chỉ
 áp dụng cho hóa đơn chưa lập. Trong tab Hóa đơn, bấm “Chi tiết” để xem dòng Wi-Fi.
-Các thao tác nâng cao vẫn có trong Swagger. Nếu chạy backend từ IntelliJ hoặc Maven,
+QR cần cấu hình `BANK_BIN`, `BANK_ACCOUNT` và `BANK_NAME`; nếu chưa cấu hình,
+giao diện sẽ báo rõ khi bấm QR. Swagger vẫn dùng để kiểm tra API. Nếu chạy
+backend từ IntelliJ hoặc Maven,
 chỉ chạy database trong Docker để tránh trùng cổng 8080:
 
 ```powershell
@@ -94,8 +98,22 @@ migration áp unique constraint. Sao lưu database trước khi nâng dữ liệ
 docker compose ps
 ```
 
+Maven kiểm tra định dạng Java ở bước `validate` và `verify`. Chạy
+`.\mvnw.cmd spotless:apply` trước khi commit thay đổi Java.
+
 Testcontainers chạy test PostgreSQL. JaCoCo tạo báo cáo
 `target/site/jacoco/index.html` và `verify` yêu cầu tối thiểu 60% line coverage.
 CI chạy build, test và Docker Compose.
 Giao diện HTML nằm trong `src/main/resources/static` và được Spring Boot phục vụ
 cùng cổng 8080. Phiên đăng nhập lưu trong tab trình duyệt và mất khi đóng tab.
+
+Trên macOS/Linux, chạy `./mvnw verify` và
+`./mvnw spring-boot:run -Dspring-boot.run.profiles=local` sau khi khởi động PostgreSQL. Maven wrapper có
+quyền thực thi trong Git; nếu filesystem không giữ quyền này, dùng `sh ./mvnw`.
+PDF dùng font DejaVu đóng gói cùng ứng dụng trên mọi hệ điều hành. Chỉ cần đặt
+`APP_PDF_FONT` khi muốn dùng font khác.
+
+Tài khoản `admin / admin_local_2026` chỉ dành cho profile `local`. Khi triển khai
+thật, không dùng profile này: đặt `APP_ADMIN_PASSWORD`, `JWT_SECRET`, thông tin
+PostgreSQL riêng. Swagger mặc định tắt ngoài `local`; đặt `APP_API_DOCS_ENABLED=true`
+nếu cần mở tài liệu API ở môi trường khác.

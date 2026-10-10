@@ -1,5 +1,7 @@
 package com.rental.rental_room.payment;
 
 public enum PaymentMethod {
-    CASH, BANK_TRANSFER, OTHER
+  CASH,
+  BANK_TRANSFER,
+  OTHER
 }

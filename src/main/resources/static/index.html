@@ -6,6 +6,7 @@
   <title>Quản lý phòng trọ</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/app.js" defer></script>
+  <script src="/extra.js" defer></script>
 </head>
 <body>
   <div id="login-screen" class="login-screen">
@@ -42,6 +43,8 @@
       <button type="button" class="tab" data-tab="people">Phòng & khách</button>
       <button type="button" class="tab" data-tab="meters">Điện nước</button>
       <button type="button" class="tab" data-tab="invoices">Hóa đơn</button>
+      <button type="button" class="tab" data-tab="contracts">Hợp đồng</button>
+      <button type="button" class="tab" data-tab="catalog">Danh mục</button>
     </nav>
 
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
@@ -66,12 +69,14 @@
             <label for="tenant-phone">Số điện thoại</label><input id="tenant-phone" type="tel" maxlength="30">
             <button class="primary" type="submit">Lưu khách thuê</button>
           </form>
-          <form id="contract-form" class="panel form-panel">
+          <form id="contract-form" class="panel form-panel owner-only">
             <h3>Tạo hợp đồng</h3>
             <div class="form-grid">
               <label>Phòng *<select id="contract-room" required></select></label>
               <label>Khách đứng hợp đồng *<select id="contract-tenant" required></select></label>
               <label>Ngày bắt đầu *<input id="contract-start" type="date" required></label>
+              <label>Ngày kết thúc<input id="contract-end" type="date"></label>
+              <label>Trạng thái<select id="contract-status"><option value="ACTIVE">Kích hoạt ngay</option><option value="PENDING">Chờ kích hoạt</option></select></label>
               <label>Ngày thu tiền *<input id="contract-due" type="number" min="1" max="31" value="5" required></label>
               <label>Tiền phòng / tháng *<input id="contract-rent" type="number" min="0" step="1" required></label>
               <label>Tiền cọc *<input id="contract-deposit" type="number" min="0" step="1" value="0" required></label>
@@ -79,12 +84,13 @@
               <label>Cách tính nước *<select id="contract-water-mode"><option value="PER_PERSON">Theo người</option><option value="METER">Theo đồng hồ</option></select></label>
               <label>Giá nước *<input id="contract-water-price" type="number" min="0" step="1" required></label>
               <label>Wi-Fi / tháng (đ)<input id="contract-wifi" type="number" min="0" step="0.01" value="0" required></label>
+              <label>Ghi chú<input id="contract-note" maxlength="1000"></label>
             </div>
             <p>Nhập 0 nếu phòng không thu Wi-Fi.</p>
             <button class="primary" type="submit">Tạo hợp đồng ACTIVE</button>
           </form>
         </div>
-        <form id="wifi-form" class="panel form-panel">
+        <form id="wifi-form" class="panel form-panel owner-only">
           <h3>Cập nhật Wi-Fi cho hợp đồng đang thuê</h3>
           <p>Giá mới áp dụng cho các hóa đơn chưa lập; hóa đơn đã tạo giữ nguyên.</p>
           <div class="form-grid">
@@ -99,6 +105,7 @@
       <section id="meters" class="page" aria-labelledby="meters-title">
         <div class="page-heading"><div><span class="eyebrow">QUY TRÌNH HÀNG THÁNG</span><h2 id="meters-title">Nhập điện nước</h2><p>Với kỳ đầu, điền chỉ số cũ làm mốc. Các kỳ sau hệ thống tự lấy chỉ số tháng trước.</p></div></div>
         <div id="meter-list" class="meter-grid"></div>
+        <article class="panel"><div class="section-actions"><h3>Dịch vụ tính theo chỉ số</h3><button id="add-service-usage" type="button" class="secondary">Nhập số lượng dịch vụ</button></div><div id="service-usages-list" class="empty">Chọn một hợp đồng có dịch vụ METER để nhập.</div></article>
         <article class="panel billing-action">
           <div><h3>Tạo hóa đơn tháng</h3><p>Lập hóa đơn cho các phòng có hợp đồng và đủ chỉ số điện nước.</p></div>
           <button id="generate-button" type="button" class="primary">Tạo hóa đơn tháng này</button>
@@ -106,8 +113,20 @@
       </section>
 
       <section id="invoices" class="page" aria-labelledby="invoices-title">
-        <div class="page-heading"><div><span class="eyebrow">THU TIỀN</span><h2 id="invoices-title">Hóa đơn</h2></div></div>
+        <div class="page-heading"><div><span class="eyebrow">THU TIỀN</span><h2 id="invoices-title">Hóa đơn</h2></div><button id="export-excel" type="button" class="secondary">Xuất Excel kỳ này</button></div>
         <p class="formula">Tổng = Tiền phòng + Điện + Nước + Dịch vụ (gồm Wi-Fi) + Khoản khác − Giảm giá.</p>
+        <div class="two-columns">
+          <form id="single-invoice-form" class="panel form-panel">
+            <h3>Tạo hóa đơn một phòng</h3>
+            <div class="form-grid">
+              <label>Phòng<select id="single-invoice-room" required></select></label>
+              <label>Khoản khác (đ)<input id="single-invoice-other" type="number" min="0" step="0.01" value="0" required></label>
+              <label>Giảm giá (đ)<input id="single-invoice-discount" type="number" min="0" step="0.01" value="0" required></label>
+            </div>
+            <button class="secondary" type="submit">Tạo hóa đơn</button>
+          </form>
+          <article class="panel"><h3>Nhắc thanh toán trong 7 ngày</h3><div id="reminders-list" class="empty">Chưa có dữ liệu.</div></article>
+        </div>
         <article class="panel"><div class="table-wrap"><table><thead><tr><th>Phòng</th><th>Số hóa đơn</th><th>Dịch vụ</th><th>Tổng tiền</th><th>Đã thu</th><th>Còn nợ</th><th>Trạng thái</th><th></th></tr></thead><tbody id="invoices-body"></tbody></table></div></article>
         <article id="invoice-detail" class="panel" hidden><h3 id="invoice-detail-title">Chi tiết hóa đơn</h3><div id="invoice-items"></div></article>
         <form id="payment-form" class="panel form-panel payment-panel" hidden>
@@ -116,12 +135,30 @@
             <label>Số tiền *<input id="payment-amount" type="number" min="0.01" step="0.01" required></label>
             <label>Hình thức *<select id="payment-method"><option value="CASH">Tiền mặt</option><option value="BANK_TRANSFER">Chuyển khoản</option><option value="OTHER">Khác</option></select></label>
             <label>Mã tham chiếu<input id="payment-reference" maxlength="100" placeholder="Nếu có"></label>
+            <label>Ghi chú<input id="payment-note" maxlength="1000"></label>
           </div>
           <button class="primary" type="submit">Xác nhận đã thu</button>
           <button id="payment-cancel" class="ghost" type="button">Hủy</button>
         </form>
       </section>
+
+      <section id="contracts" class="page" aria-labelledby="contracts-title">
+        <div class="page-heading"><div><span class="eyebrow">LỊCH SỬ THUÊ</span><h2 id="contracts-title">Hợp đồng & người ở</h2></div></div>
+        <article class="panel"><div id="contracts-body"></div></article>
+        <article id="contract-detail" class="panel" hidden></article>
+      </section>
+
+      <section id="catalog" class="page" aria-labelledby="catalog-title">
+        <div class="page-heading"><div><span class="eyebrow">CẤU HÌNH</span><h2 id="catalog-title">Danh mục & tài khoản</h2></div></div>
+        <article class="panel"><div class="section-actions"><h3>Dãy trọ</h3><button id="add-property" type="button" class="secondary owner-only">Thêm dãy</button></div><div id="properties-list"></div></article>
+        <article class="panel"><div class="section-actions"><h3>Phòng</h3><button id="add-room" type="button" class="secondary owner-only">Thêm phòng</button></div><div id="catalog-rooms"></div></article>
+        <article class="panel"><div class="section-actions"><h3>Khách thuê</h3><button id="add-tenant" type="button" class="secondary">Thêm khách</button></div><div id="catalog-tenants"></div></article>
+        <article class="panel"><div class="section-actions"><h3>Dịch vụ</h3><button id="add-service" type="button" class="secondary owner-only">Thêm dịch vụ</button></div><div id="catalog-services"></div></article>
+        <article class="panel owner-only"><div class="section-actions"><h3>Tài khoản nhân viên</h3><button id="add-user" type="button" class="secondary">Thêm tài khoản</button></div><div id="users-list"></div></article>
+      </section>
     </main>
+    <dialog id="editor-dialog" class="editor-dialog"><form id="editor-form"><h3 id="editor-title"></h3><div id="editor-fields" class="form-grid"></div><div class="dialog-actions"><button type="button" class="ghost" id="editor-close">Đóng</button><button type="submit" class="primary">Lưu</button></div></form></dialog>
+    <dialog id="viewer-dialog" class="viewer-dialog"><div class="section-actions"><h3 id="viewer-title"></h3><button type="button" class="ghost" id="viewer-close">Đóng</button></div><div id="viewer-content"></div></dialog>
     <footer>Giao diện đơn giản cho chủ trọ · <a href="/swagger-ui.html" target="_blank" rel="noopener noreferrer">Mở Swagger API</a></footer>
   </div>
 </body>
