@@ -24,7 +24,7 @@ services:
       DB_USERNAME: rental
       DB_PASSWORD: ${DB_PASSWORD:-rental_local}
       APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
-      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-admin_local_2026}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-admin}
       JWT_SECRET: ${JWT_SECRET:-local-development-jwt-key-change-before-deployment-2026}
       BANK_BIN: ${BANK_BIN:-}
       BANK_ACCOUNT: ${BANK_ACCOUNT:-}

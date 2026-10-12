@@ -31,12 +31,22 @@ docker compose up -d postgres
 ```
 
 Profile `local` tạo một dãy P01–P09 (20 m², có gác, điều hòa); tiền thuê
-chưa được đặt. Tài khoản OWNER ban đầu: `admin / admin_local_2026`.
+chưa được đặt. Tài khoản OWNER ban đầu: `admin / admin`.
 Nó được tạo khi bảng người dùng trống; đổi biến môi trường về sau không
 tự đổi mật khẩu đã lưu.
 
+Trong profile `local`, mật khẩu khởi tạo có thể ngắn từ 5 ký tự để thử nghiệm;
+các môi trường khác yêu cầu ít nhất 12 ký tự. Nếu database đã có tài khoản,
+`APP_ADMIN_PASSWORD` không phải chức năng đặt lại mật khẩu. Đăng nhập bằng mật
+khẩu đã dùng khi tạo tài khoản, rồi bấm **Đổi mật khẩu** ở góc trên. Đổi mật khẩu
+cần nhập mật khẩu hiện tại. Tài khoản OWNER thêm người dùng ở **Danh mục & tài
+khoản → Thêm tài khoản**; có thể chọn OWNER hoặc STAFF. Mật khẩu của tài khoản
+mới phải có ít nhất 12 ký tự. Nếu quên mật khẩu OWNER và không còn tài khoản
+OWNER nào khác, cần khôi phục trong database từ bản sao lưu hoặc bằng quy trình
+quản trị riêng; không xóa volume database để đặt lại mật khẩu.
+
 ```powershell
-$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/login -ContentType 'application/json' -Body '{"username":"admin","password":"admin_local_2026"}'
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/login -ContentType 'application/json' -Body '{"username":"admin","password":"admin"}'
 $headers = @{ Authorization = "Bearer $($login.accessToken)" }
 Invoke-RestMethod -Uri http://localhost:8080/api/v1/rooms -Headers $headers
 ```
@@ -113,7 +123,7 @@ quyền thực thi trong Git; nếu filesystem không giữ quyền này, dùng 
 PDF dùng font DejaVu đóng gói cùng ứng dụng trên mọi hệ điều hành. Chỉ cần đặt
 `APP_PDF_FONT` khi muốn dùng font khác.
 
-Tài khoản `admin / admin_local_2026` chỉ dành cho profile `local`. Khi triển khai
+Tài khoản `admin / admin` chỉ dành cho profile `local`. Khi triển khai
 thật, không dùng profile này: đặt `APP_ADMIN_PASSWORD`, `JWT_SECRET`, thông tin
 PostgreSQL riêng. Swagger mặc định tắt ngoài `local`; đặt `APP_API_DOCS_ENABLED=true`
 nếu cần mở tài liệu API ở môi trường khác.

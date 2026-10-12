@@ -2,7 +2,10 @@
 
 const $ = (id) => document.getElementById(id);
 const state = {tokens: null, properties: [], rooms: [], tenants: [], contracts: [], services: [], worksheet: [], electricity: [], water: [], invoices: [], reminders: [], dashboard: null};
-const money = (value) => `${new Intl.NumberFormat("vi-VN", {maximumFractionDigits: 2}).format(Number(value || 0))} đ`;
+const money = (value) => {
+  const amount = Number(value || 0);
+  return `${new Intl.NumberFormat("vi-VN", {maximumFractionDigits: 0}).format(Math.sign(amount) * Math.ceil(Math.abs(amount)))} đ`;
+};
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -163,8 +166,17 @@ function renderPeople() {
     roomsBody.append(row);
   });
   const tenantsBody = $("tenants-body"); tenantsBody.replaceChildren();
-  if (!state.tenants.length) emptyRow(tenantsBody, 3, "Chưa có khách thuê.");
-  state.tenants.forEach((tenant) => { const row = node("tr"); addCells(row, [tenant.fullName, tenant.phone || "—", tenant.id]); tenantsBody.append(row); });
+  if (!state.tenants.length) emptyRow(tenantsBody, 4, "Chưa có khách thuê.");
+  state.tenants.forEach((tenant) => {
+    const row = node("tr");
+    addCells(row, [tenant.fullName, tenant.phone || "—", tenant.id]);
+    const cell = node("td");
+    const button = node("button", "ghost small-button", "Sửa");
+    button.type = "button";
+    button.setAttribute("aria-label", `Sửa thông tin ${tenant.fullName}`);
+    button.addEventListener("click", () => tenantEditor(tenant));
+    cell.append(button); row.append(cell); tenantsBody.append(row);
+  });
   fillSelect($("contract-room"), state.rooms.filter((room) => room.status === "VACANT").map((room) => [room.roomNumber, room.id]), "Chọn phòng trống");
   fillSelect($("contract-tenant"), state.tenants.map((tenant) => [tenant.fullName, tenant.id]), "Chọn khách thuê");
   const currentWifiContract = $("wifi-contract").value;

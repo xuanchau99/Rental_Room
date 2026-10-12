@@ -63,6 +63,6 @@ public class BillingPolicy {
     long days = java.time.temporal.ChronoUnit.DAYS.between(first, last) + 1;
     return c.getMonthlyRent()
         .multiply(BigDecimal.valueOf(days))
-        .divide(BigDecimal.valueOf(p.lengthOfMonth()), 2, RoundingMode.HALF_UP);
+        .divide(BigDecimal.valueOf(p.lengthOfMonth()), 0, RoundingMode.CEILING);
   }
 }

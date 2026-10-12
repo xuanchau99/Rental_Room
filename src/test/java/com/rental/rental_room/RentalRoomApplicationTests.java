@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.rental.rental_room.api.*;
 import com.rental.rental_room.auth.AuthService;
+import com.rental.rental_room.auth.UserAdminService;
 import com.rental.rental_room.billing.*;
 import com.rental.rental_room.common.BusinessException;
 import com.rental.rental_room.contract.ContractStatus;
@@ -68,6 +69,7 @@ class RentalRoomApplicationTests {
   @Autowired PaymentQrController qr;
   @Autowired com.rental.rental_room.dashboard.DashboardService dashboard;
   @Autowired AuthService auth;
+  @Autowired UserAdminService users;
   @Autowired MockMvc mvc;
   @Autowired EntityManagerFactory emf;
   @Autowired EntityManager em;
@@ -331,13 +333,47 @@ class RentalRoomApplicationTests {
 
   @Test
   @Transactional
+  void tenantContactFieldsRejectMalformedInput() throws Exception {
+    var access = auth.login("admin", "admin").accessToken();
+    mvc.perform(
+            post("/api/v1/tenants")
+                .header("Authorization", "Bearer " + access)
+                .contentType("application/json")
+                .content("{\"fullName\":\"Test\",\"phone\":\"abc\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.containsString("phone")));
+    mvc.perform(
+            post("/api/v1/tenants")
+                .header("Authorization", "Bearer " + access)
+                .contentType("application/json")
+                .content("{\"fullName\":\"Test\",\"citizenId\":\"123\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.errors[0]").value(org.hamcrest.Matchers.containsString("citizenId")));
+    var tenant =
+        catalog.tenant(
+            null,
+            new Requests.TenantInput(
+                "Test", "0987654321", "012345678901", null, null, null, null, null));
+    mvc.perform(
+            put("/api/v1/tenants/{id}", tenant.id())
+                .header("Authorization", "Bearer " + access)
+                .contentType("application/json")
+                .content("{\"fullName\":\"Test\",\"phone\":\"098765432\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.containsString("phone")));
+    assertThat(catalog.tenant(tenant.id()).phone()).isEqualTo("0987654321");
+  }
+
+  @Test
+  @Transactional
   void jwtRotationAndApiAuthorizationWork() throws Exception {
     mvc.perform(get("/")).andExpect(status().isOk());
     mvc.perform(get("/app.css")).andExpect(status().isOk());
     mvc.perform(get("/app.js")).andExpect(status().isOk());
     mvc.perform(get("/extra.js")).andExpect(status().isOk());
     mvc.perform(get("/api/v1/rooms")).andExpect(status().isUnauthorized());
-    var tokens = auth.login("admin", "admin_local_2026");
+    var tokens = auth.login("admin", "admin");
     mvc.perform(get("/api/v1/rooms").header("Authorization", "Bearer " + tokens.accessToken()))
         .andExpect(status().isOk());
     mvc.perform(
@@ -363,6 +399,43 @@ class RentalRoomApplicationTests {
     auth.logout(rotated.refreshToken());
     assertThatThrownBy(() -> auth.refresh(rotated.refreshToken()))
         .isInstanceOf(BusinessException.class);
+  }
+
+  @Test
+  @Transactional
+  void ownerCreatesStaffAndStaffChangesPassword() throws Exception {
+    var owner = auth.login("admin", "admin");
+    mvc.perform(
+            post("/api/v1/users")
+                .header("Authorization", "Bearer " + owner.accessToken())
+                .contentType("application/json")
+                .content(
+                    "{\"username\":\"staff_demo\",\"password\":\"staff_password_2026\",\"role\":\"STAFF\"}"))
+        .andExpect(status().isCreated());
+    assertThat(users.list())
+        .anySatisfy(user -> assertThat(user.username()).isEqualTo("staff_demo"));
+
+    var staff = auth.login("staff_demo", "staff_password_2026");
+    mvc.perform(get("/api/v1/users").header("Authorization", "Bearer " + staff.accessToken()))
+        .andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/auth/change-password")
+                .header("Authorization", "Bearer " + staff.accessToken())
+                .contentType("application/json")
+                .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"admin\"}"))
+        .andExpect(status().isUnauthorized());
+    mvc.perform(
+            post("/api/v1/auth/change-password")
+                .header("Authorization", "Bearer " + staff.accessToken())
+                .contentType("application/json")
+                .content("{\"currentPassword\":\"staff_password_2026\",\"newPassword\":\"admin\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.accessToken").isNotEmpty());
+    assertThatThrownBy(() -> auth.login("staff_demo", "staff_password_2026"))
+        .isInstanceOf(BusinessException.class);
+    assertThatThrownBy(() -> auth.refresh(staff.refreshToken()))
+        .isInstanceOf(BusinessException.class);
+    assertThat(auth.login("staff_demo", "admin").accessToken()).isNotBlank();
   }
 
   @Test
@@ -399,7 +472,7 @@ class RentalRoomApplicationTests {
                 new BigDecimal("110"),
                 new BigDecimal("100"),
                 null));
-    var access = auth.login("admin", "admin_local_2026").accessToken();
+    var access = auth.login("admin", "admin").accessToken();
     mvc.perform(
             put("/api/v1/electricity-readings/{id}", reading.id())
                 .header("Authorization", "Bearer " + access)

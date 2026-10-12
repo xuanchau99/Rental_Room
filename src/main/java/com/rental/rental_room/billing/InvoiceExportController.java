@@ -2,6 +2,7 @@ package com.rental.rental_room.billing;
 
 import com.rental.rental_room.common.*;
 import com.rental.rental_room.config.AppProperties;
+import com.rental.rental_room.invoice.InvoiceItemType;
 import java.io.*;
 import java.math.*;
 import java.nio.file.*;
@@ -51,13 +52,15 @@ public class InvoiceExportController {
                   + " | "
                   + item.quantity()
                   + " x "
-                  + item.unitPrice()
+                  + (item.type() == InvoiceItemType.RENT
+                      ? displayAmount(item.unitPrice())
+                      : item.unitPrice().stripTrailingZeros().toPlainString())
                   + " = "
-                  + item.amount());
+                  + displayAmount(item.amount()));
         lines.add("");
-        lines.add("TOTAL: " + invoice.totalAmount() + " VND");
-        lines.add("PAID: " + invoice.paidAmount() + " VND");
-        lines.add("OUTSTANDING: " + invoice.outstandingAmount() + " VND");
+        lines.add("TOTAL: " + displayAmount(invoice.totalAmount()) + " VND");
+        lines.add("PAID: " + displayAmount(invoice.paidAmount()) + " VND");
+        lines.add("OUTSTANDING: " + displayAmount(invoice.outstandingAmount()) + " VND");
         if (lines.size() > 40)
           throw BusinessException.invalid("Too many invoice items for one-page PDF");
         for (var line : lines) {
@@ -73,6 +76,11 @@ public class InvoiceExportController {
               "attachment; filename=\"" + invoice.number() + ".pdf\"")
           .body(out.toByteArray());
     }
+  }
+
+  private String displayAmount(BigDecimal amount) {
+    var absolute = Money.round(amount.abs());
+    return (amount.signum() < 0 ? "-" : "") + absolute.toPlainString();
   }
 
   private InputStream openFont() throws IOException {
@@ -139,7 +147,8 @@ public class InvoiceExportController {
                 i.discount(),
                 i.totalAmount(),
                 i.paidAmount(),
-                i.outstandingAmount())) row.createCell(col++).setCellValue(v.doubleValue());
+                i.outstandingAmount()))
+          row.createCell(col++).setCellValue(Money.round(v).doubleValue());
         row.createCell(col).setCellValue(i.status());
       }
       sheet.setColumnWidth(0, 7000);

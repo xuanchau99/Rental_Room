@@ -8,7 +8,7 @@ public final class Money {
   public static final BigDecimal ZERO = new BigDecimal("0.00");
 
   public static BigDecimal round(BigDecimal amount) {
-    return amount.setScale(2, RoundingMode.HALF_UP);
+    return amount.setScale(0, RoundingMode.CEILING);
   }
 
   public static BigDecimal charge(BigDecimal quantity, BigDecimal price) {

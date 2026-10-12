@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.time.*;
 import java.util.*;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -18,13 +20,16 @@ public class AuthService {
   private final Database db;
   private final PasswordEncoder passwords;
   private final JwtEncoder encoder;
+  private final Environment environment;
   private final SecureRandom random = new SecureRandom();
   private final String dummyHash;
 
-  public AuthService(Database db, PasswordEncoder passwords, JwtEncoder encoder) {
+  public AuthService(
+      Database db, PasswordEncoder passwords, JwtEncoder encoder, Environment environment) {
     this.db = db;
     this.passwords = passwords;
     this.encoder = encoder;
+    this.environment = environment;
     this.dummyHash = passwords.encode("invalid-login");
   }
 
@@ -70,6 +75,34 @@ public class AuthService {
             "hash",
             hash(raw))
         .ifPresent(t -> t.setRevokedAt(Instant.now()));
+  }
+
+  @Transactional
+  public Tokens changePassword(String username, String currentPassword, String newPassword) {
+    var id =
+        db.first(
+                "select u.id from UserAccount u where u.username=:name",
+                Long.class,
+                "name",
+                username)
+            .orElseThrow(AuthService::unauthorized);
+    var user = db.lock(UserAccount.class, id);
+    if (!user.isEnabled() || !passwords.matches(currentPassword, user.getPasswordHash()))
+      throw unauthorized();
+    int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 12;
+    if (newPassword.length() < minimum || newPassword.length() > 72)
+      throw BusinessException.invalid("New password requires " + minimum + "..72 characters");
+    if (passwords.matches(newPassword, user.getPasswordHash()))
+      throw BusinessException.invalid("New password must differ from current password");
+    user.setPasswordHash(passwords.encode(newPassword));
+    var now = Instant.now();
+    for (var token :
+        db.query(
+            "select t from RefreshToken t where t.user.id=:id and t.revokedAt is null",
+            RefreshToken.class,
+            "id",
+            id)) token.setRevokedAt(now);
+    return issue(user);
   }
 
   private Tokens issue(UserAccount user) {

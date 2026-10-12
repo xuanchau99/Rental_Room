@@ -32,8 +32,11 @@ public final class Requests {
 
   public record TenantInput(
       @NotBlank @Size(max = 150) String fullName,
-      @Size(max = 30) String phone,
-      @Size(max = 50) String citizenId,
+      @Pattern(
+              regexp = "0[35789][0-9]{8}",
+              message = "Số điện thoại phải là số di động Việt Nam gồm 10 chữ số")
+          String phone,
+      @Pattern(regexp = "[0-9]{12}", message = "CCCD phải gồm đúng 12 chữ số") String citizenId,
       @PastOrPresent LocalDate dateOfBirth,
       @Size(max = 255) String address,
       @Size(max = 30) String gender,

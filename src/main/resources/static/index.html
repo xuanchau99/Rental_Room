@@ -34,6 +34,7 @@
         <select id="period-month" aria-label="Tháng"></select>
         <input id="period-year" type="number" min="2000" max="9999" aria-label="Năm">
         <button id="refresh-button" type="button" class="secondary">Làm mới</button>
+        <button id="change-password-button" type="button" class="ghost">Đổi mật khẩu</button>
         <button id="logout-button" type="button" class="ghost">Đăng xuất</button>
       </div>
     </header>
@@ -61,12 +62,12 @@
 
       <section id="people" class="page" aria-labelledby="people-title">
         <div class="page-heading"><div><span class="eyebrow">THÔNG TIN THUÊ</span><h2 id="people-title">Phòng & khách thuê</h2></div></div>
-        <article class="panel"><h3>Danh sách phòng</h3><div class="table-wrap"><table><thead><tr><th>Phòng</th><th>Diện tích</th><th>Tiện nghi</th><th>Trạng thái</th><th>Giá niêm yết</th></tr></thead><tbody id="rooms-body"></tbody></table></div></article>
+        <article class="panel"><div class="section-actions"><h3>Danh sách phòng</h3><button id="add-room-people" type="button" class="secondary owner-only">Thêm phòng</button></div><div class="table-wrap"><table><thead><tr><th>Phòng</th><th>Diện tích</th><th>Tiện nghi</th><th>Trạng thái</th><th>Giá niêm yết</th></tr></thead><tbody id="rooms-body"></tbody></table></div></article>
         <div class="two-columns forms-row">
           <form id="tenant-form" class="panel form-panel">
             <h3>Thêm khách thuê</h3>
             <label for="tenant-name">Họ tên *</label><input id="tenant-name" required maxlength="150">
-            <label for="tenant-phone">Số điện thoại</label><input id="tenant-phone" type="tel" maxlength="30">
+            <label for="tenant-phone">Số điện thoại</label><input id="tenant-phone" type="tel" inputmode="numeric" maxlength="10" pattern="0[35789][0-9]{8}" title="Số di động Việt Nam gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09">
             <button class="primary" type="submit">Lưu khách thuê</button>
           </form>
           <form id="contract-form" class="panel form-panel owner-only">
@@ -99,7 +100,7 @@
           </div>
           <button class="secondary" type="submit">Lưu giá Wi-Fi</button>
         </form>
-        <article class="panel"><h3>Khách thuê đã lưu</h3><div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>Điện thoại</th><th>Mã khách</th></tr></thead><tbody id="tenants-body"></tbody></table></div></article>
+        <article class="panel"><h3>Khách thuê đã lưu</h3><div class="table-wrap"><table><thead><tr><th>Họ tên</th><th>Điện thoại</th><th>Mã khách</th><th>Thao tác</th></tr></thead><tbody id="tenants-body"></tbody></table></div></article>
       </section>
 
       <section id="meters" class="page" aria-labelledby="meters-title">
@@ -154,7 +155,7 @@
         <article class="panel"><div class="section-actions"><h3>Phòng</h3><button id="add-room" type="button" class="secondary owner-only">Thêm phòng</button></div><div id="catalog-rooms"></div></article>
         <article class="panel"><div class="section-actions"><h3>Khách thuê</h3><button id="add-tenant" type="button" class="secondary">Thêm khách</button></div><div id="catalog-tenants"></div></article>
         <article class="panel"><div class="section-actions"><h3>Dịch vụ</h3><button id="add-service" type="button" class="secondary owner-only">Thêm dịch vụ</button></div><div id="catalog-services"></div></article>
-        <article class="panel owner-only"><div class="section-actions"><h3>Tài khoản nhân viên</h3><button id="add-user" type="button" class="secondary">Thêm tài khoản</button></div><div id="users-list"></div></article>
+        <article class="panel owner-only"><div class="section-actions"><h3>Tài khoản người dùng</h3><button id="add-user" type="button" class="secondary">Thêm tài khoản</button></div><div id="users-list"></div></article>
       </section>
     </main>
     <dialog id="editor-dialog" class="editor-dialog"><form id="editor-form"><h3 id="editor-title"></h3><div id="editor-fields" class="form-grid"></div><div class="dialog-actions"><button type="button" class="ghost" id="editor-close">Đóng</button><button type="submit" class="primary">Lưu</button></div></form></dialog>

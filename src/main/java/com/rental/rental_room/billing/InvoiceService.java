@@ -48,6 +48,15 @@ public class InvoiceService {
             "id",
             c.getId());
     var baseRent = policy.rent(c, period);
+    var electricAmount = Money.charge(electric.getUsage(), electric.getUnitPrice());
+    var waterAmount =
+        Money.charge(
+            water.getCalculationType() == com.rental.rental_room.water.WaterCalculationType.METER
+                ? water.getUsage()
+                : BigDecimal.valueOf(water.getPersonCount()),
+            water.getUnitPrice());
+    var otherAmount = Money.round(r.otherAmount());
+    var discount = Money.round(r.discount());
     BigDecimal serviceTotal = Money.ZERO;
     var invoice = new Invoice();
     invoice.setRoom(room);
@@ -60,10 +69,10 @@ public class InvoiceService {
     invoice.setPeriodEnd(period.atEndOfMonth());
     invoice.setDueDate(period.atDay(Math.min(c.getPaymentDueDay(), period.lengthOfMonth())));
     invoice.setRoomAmount(baseRent);
-    invoice.setElectricAmount(electric.getAmount());
-    invoice.setWaterAmount(water.getAmount());
-    invoice.setOtherAmount(r.otherAmount());
-    invoice.setDiscount(r.discount());
+    invoice.setElectricAmount(electricAmount);
+    invoice.setWaterAmount(waterAmount);
+    invoice.setOtherAmount(otherAmount);
+    invoice.setDiscount(discount);
     // Calculate before persisting so a negative total cannot ever be recorded.
     int people = policy.people(c.getId(), period);
     var meteredUsage = new HashMap<Long, BigDecimal>();
@@ -96,15 +105,10 @@ public class InvoiceService {
       serviceTotal = serviceTotal.add(charge.amount());
     }
     invoice.setServiceAmount(serviceTotal);
-    var gross =
-        baseRent
-            .add(electric.getAmount())
-            .add(water.getAmount())
-            .add(serviceTotal)
-            .add(r.otherAmount());
-    if (r.discount().compareTo(gross) > 0)
+    var gross = baseRent.add(electricAmount).add(waterAmount).add(serviceTotal).add(otherAmount);
+    if (discount.compareTo(gross) > 0)
       throw BusinessException.invalid("Discount exceeds invoice gross amount");
-    invoice.initializeTotal(Money.round(gross.subtract(r.discount())), Dates.today());
+    invoice.initializeTotal(gross.subtract(discount), Dates.today());
     db.save(invoice);
     item(invoice, InvoiceItemType.RENT, "Room rent", BigDecimal.ONE, baseRent);
     item(
@@ -124,11 +128,11 @@ public class InvoiceService {
           water.getUnitPrice());
     for (var charge : charges)
       item(invoice, InvoiceItemType.SERVICE, charge.name(), charge.quantity(), charge.price());
-    if (r.otherAmount().signum() > 0)
-      item(invoice, InvoiceItemType.OTHER, "Other charges", BigDecimal.ONE, r.otherAmount());
+    if (otherAmount.signum() > 0)
+      item(invoice, InvoiceItemType.OTHER, "Other charges", BigDecimal.ONE, otherAmount);
     // Discounts are represented by an explicit negative item to make the item sum equal the invoice
     // total.
-    if (r.discount().signum() > 0) discountItem(invoice, r.discount());
+    if (discount.signum() > 0) discountItem(invoice, discount);
     db.em().flush();
     return get(invoice.getId());
   }
