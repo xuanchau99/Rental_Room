@@ -1,7 +1,11 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const state = {tokens: null, properties: [], rooms: [], tenants: [], contracts: [], services: [], worksheet: [], electricity: [], water: [], invoices: [], reminders: [], dashboard: null};
+const state = {tokens: null, properties: [], rooms: [], tenants: [], contracts: [], services: [], serviceUsages: [], users: [], worksheet: [], electricity: [], water: [], invoices: [], reminders: [], dashboard: null};
+const owner = () => {
+  try { return JSON.parse(atob(state.tokens.accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).role === "OWNER"; }
+  catch { return false; }
+};
 const money = (value) => {
   const amount = Number(value || 0);
   return `${new Intl.NumberFormat("vi-VN", {maximumFractionDigits: 0}).format(Math.sign(amount) * Math.ceil(Math.abs(amount)))} đ`;
@@ -79,6 +83,13 @@ async function perform(button, action, success) {
     return null;
   } finally { button.disabled = false; }
 }
+function performMutation(button, action, success) {
+  return perform(button, async () => {
+    const result = await action();
+    await reload();
+    return result;
+  }, success);
+}
 function assertPeriod() {
   const selected = period();
   const current = new Date();
@@ -88,15 +99,19 @@ function assertPeriod() {
     throw new Error("Chưa thể lập hóa đơn cho tháng trong tương lai.");
   return selected;
 }
+let reloadVersion = 0;
 async function reload() {
+  const version = ++reloadVersion;
   const selected = assertPeriod();
   const params = query({...selected, size: 100});
-  const [properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders] = await Promise.all([
+  const [properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders, serviceUsages, users] = await Promise.all([
     api("/properties"), api("/rooms?size=100"), api("/tenants?size=100"), api("/contracts?size=100"), api("/services?size=100"),
     api(`/dashboard?${query(selected)}`), api(`/meter-workflow?${query(selected)}`),
-    api(`/electricity-readings?${params}`), api(`/water-readings?${params}`), api(`/invoices?${params}`), api("/reminders?dueWithinDays=7")
+    api(`/electricity-readings?${params}`), api(`/water-readings?${params}`), api(`/invoices?${params}`), api("/reminders?dueWithinDays=7"),
+    api("/service-usages?size=100"), owner() ? api("/users") : Promise.resolve([])
   ]);
-  Object.assign(state, {properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders});
+  if (version !== reloadVersion) return;
+  Object.assign(state, {properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders, serviceUsages, users});
   render();
 }
 function emptyRow(body, columns, message) {
@@ -228,8 +243,7 @@ function meterBlock(title, existing, oldReading, mode, roomId, kind) {
       payload.currentReading = Number(current.value);
       payload.previousReading = old.value === "" ? null : Number(old.value);
     }
-    const result = await perform(submit, () => api(kind === "water" ? "/water-readings" : "/electricity-readings", {method: "POST", body: payload}), "Đã lưu chỉ số.");
-    if (result) await perform(submit, reload);
+    await performMutation(submit, () => api(kind === "water" ? "/water-readings" : "/electricity-readings", {method: "POST", body: payload}), "Đã lưu chỉ số.");
   });
   return block;
 }
@@ -325,10 +339,10 @@ document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click",
 $("tenant-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button");
-  const result = await perform(button, () => api("/tenants", {method: "POST", body: {
+  const result = await performMutation(button, () => api("/tenants", {method: "POST", body: {
     fullName: $("tenant-name").value.trim(), phone: $("tenant-phone").value.trim() || null
   }}), "Đã thêm khách thuê.");
-  if (result) { event.currentTarget.reset(); await perform(button, reload); }
+  if (result) event.currentTarget.reset();
 });
 $("wifi-contract").addEventListener("change", () => loadWifiPrice().catch((error) => setNotice(error.message, true)));
 $("wifi-form").addEventListener("submit", async (event) => {
@@ -336,7 +350,7 @@ $("wifi-form").addEventListener("submit", async (event) => {
   const button = event.currentTarget.querySelector("button[type=submit]");
   const contractId = $("wifi-contract").value;
   const price = Number($("wifi-price").value);
-  const result = await perform(button, async () => {
+  await performMutation(button, async () => {
     const current = await api(`/contracts/${contractId}/services`);
     const existingWifi = current.filter((item) => isWifiName(item.name));
     if (existingWifi.length > 1) throw new Error("Hợp đồng có nhiều dịch vụ Internet/Wi-Fi. Hãy kiểm tra trong Swagger trước khi sửa.");
@@ -348,11 +362,10 @@ $("wifi-form").addEventListener("submit", async (event) => {
     }
     return api(`/contracts/${contractId}/services`, {method: "PUT", body: others});
   }, "Đã cập nhật Wi-Fi cho các hóa đơn chưa lập.");
-  if (result) await perform(button, reload);
 });
 $("contract-form").addEventListener("submit", async (event) => {
   event.preventDefault(); const button = event.currentTarget.querySelector("button");
-  const result = await perform(button, () => {
+  const result = await performMutation(button, () => {
     const wifi = wifiSubscription(Number($("contract-wifi").value));
     return api("/contracts", {method: "POST", body: {
       roomId: Number($("contract-room").value), tenantId: Number($("contract-tenant").value),
@@ -365,24 +378,23 @@ $("contract-form").addEventListener("submit", async (event) => {
   }, () => $("contract-status").value === "PENDING"
     ? "Đã tạo hợp đồng chờ; phòng sẽ được thuê khi kích hoạt."
     : "Đã tạo hợp đồng và chuyển phòng sang Đang thuê.");
-  if (result) { event.currentTarget.reset(); $("contract-start").value = today(); await perform(button, reload); }
+  if (result) { event.currentTarget.reset(); $("contract-start").value = today(); }
 });
 $("generate-button").addEventListener("click", async (event) => {
   const button = event.currentTarget;
-  const result = await perform(button, () => api("/invoices/generate-monthly", {method: "POST", body: {...period(), propertyId: null}}),
+  await performMutation(button, () => api("/invoices/generate-monthly", {method: "POST", body: {...period(), propertyId: null}}),
     (value) => `Đã tạo ${value.created.length} hóa đơn; đã có ${value.existing.length}.` +
       (Object.keys(value.failed).length ? ` Cần kiểm tra: ${Object.entries(value.failed).map(([id, reason]) => `${roomName(Number(id))}: ${reason}`).join("; ")}` : ""));
-  if (result) await perform(button, reload);
 });
 $("payment-form").addEventListener("submit", async (event) => {
   event.preventDefault(); const button = event.currentTarget.querySelector("button[type=submit]");
   const id = event.currentTarget.dataset.invoiceId;
-  const result = await perform(button, () => api(`/invoices/${id}/payments`, {method: "POST", body: {
+  const result = await performMutation(button, () => api(`/invoices/${id}/payments`, {method: "POST", body: {
     amount: Number($("payment-amount").value), paymentMethod: $("payment-method").value,
     paymentDate: new Date().toISOString(), referenceCode: $("payment-reference").value.trim() || null,
     note: $("payment-note").value.trim() || null
   }}), "Đã ghi nhận thanh toán.");
-  if (result) { event.currentTarget.reset(); event.currentTarget.hidden = true; await perform(button, reload); }
+  if (result) { event.currentTarget.reset(); event.currentTarget.hidden = true; }
 });
 $("payment-cancel").addEventListener("click", () => { $("payment-form").hidden = true; });
 
