@@ -20,21 +20,28 @@ public class ContractSubscriptionService {
   public List<SubscriptionView> list(Long contractId) {
     db.get(Contract.class, contractId);
     return db.query(
-        "select s from ContractSubscription s where s.contract.id=:contract order by s.id",
-        ContractSubscription.class, "contract", contractId)
+            "select s from ContractSubscription s where s.contract.id=:contract order by s.id",
+            ContractSubscription.class,
+            "contract",
+            contractId)
         .stream().map(SubscriptionView::of).toList();
   }
 
   public List<SubscriptionView> replace(Long contractId, List<Requests.Subscription> requests) {
     var contract = db.lock(Contract.class, contractId);
-    db.em().createQuery("delete from ContractSubscription s where s.contract.id=:contract")
-        .setParameter("contract", contractId).executeUpdate();
-    if (requests == null || requests.isEmpty()) return List.of();
+    db.em()
+        .createQuery("delete from ContractSubscription s where s.contract.id=:contract")
+        .setParameter("contract", contractId)
+        .executeUpdate();
+    if (requests == null || requests.isEmpty()) {
+      return List.of();
+    }
 
     for (var request : requests) {
       var service = db.lock(RentalService.class, request.serviceId());
-      if (!service.isActive())
+      if (!service.isActive()) {
         throw BusinessException.conflict("Inactive service cannot be assigned to a contract");
+      }
       var subscription = new ContractSubscription();
       subscription.setContract(contract);
       subscription.setService(service);

@@ -12,7 +12,10 @@ public record AppProperties(Jwt jwt, Images images, Bank bank, Pdf pdf) {
   }
 
   public record Jwt(String secret) {}
+
   public record Images(String root) {}
+
   public record Bank(String bin, String account, String name) {}
+
   public record Pdf(String font) {}
 }
