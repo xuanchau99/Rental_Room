@@ -54,8 +54,7 @@ public class InvoiceExportDataService {
             Payment.class,
             "invoice",
             invoice.getId());
-    var paid =
-        payments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    var paid = payments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     return new ExportRow(
         invoice.getNumber(),
         invoice.getRoom().getCode(),
