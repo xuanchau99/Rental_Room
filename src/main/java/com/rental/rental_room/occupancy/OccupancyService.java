@@ -1,9 +1,8 @@
 package com.rental.rental_room.occupancy;
 
-import static com.rental.rental_room.api.Views.OccupantView;
-
-import com.rental.rental_room.api.BusinessException;
 import com.rental.rental_room.api.Requests;
+import com.rental.rental_room.api.Views.OccupantView;
+import com.rental.rental_room.common.BusinessException;
 import com.rental.rental_room.common.Database;
 import com.rental.rental_room.common.Dates;
 import com.rental.rental_room.contract.Contract;
