@@ -21,9 +21,12 @@ public class DepositService {
   @Transactional(readOnly = true)
   public Map<String, Object> summary(Long contractId) {
     var contract = db.get(Contract.class, contractId);
-    var transactions = db.query(
-        "select t from DepositTransaction t where t.contract.id=:contract order by t.transactionDate, t.id",
-        DepositTransaction.class, "contract", contractId);
+    var transactions =
+        db.query(
+            "select t from DepositTransaction t where t.contract.id=:contract order by t.transactionDate, t.id",
+            DepositTransaction.class,
+            "contract",
+            contractId);
     BigDecimal received = BigDecimal.ZERO;
     BigDecimal refunded = BigDecimal.ZERO;
     BigDecimal deducted = BigDecimal.ZERO;
@@ -50,8 +53,10 @@ public class DepositService {
     if (request.type() != DepositType.RECEIVED) {
       var summary = summary(contractId);
       var balance = (BigDecimal) summary.get("balance");
-      if (request.amount().compareTo(balance) > 0)
-        throw BusinessException.conflict("Deposit refund/deduction exceeds remaining balance");
+      if (request.amount().compareTo(balance) > 0) {
+        throw BusinessException.conflict(
+            "Deposit refund/deduction exceeds remaining balance");
+      }
     }
     var transaction = new DepositTransaction();
     transaction.setContract(contract);
