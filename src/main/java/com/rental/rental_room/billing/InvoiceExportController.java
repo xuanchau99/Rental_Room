@@ -92,8 +92,18 @@ public class InvoiceExportController {
       return Files.newInputStream(path);
     }
     var bundled = getClass().getResourceAsStream("/fonts/DejaVuSans.ttf");
-    if (bundled == null) throw new IllegalStateException("Bundled PDF font is missing");
-    return bundled;
+    if (bundled != null) return bundled;
+
+    for (var candidate :
+        List.of(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "C:/Windows/Fonts/arial.ttf")) {
+      var path = Path.of(candidate);
+      if (Files.isRegularFile(path)) return Files.newInputStream(path);
+    }
+    throw new IllegalStateException(
+        "PDF font is missing; bundle /fonts/DejaVuSans.ttf or configure APP_PDF_FONT");
   }
 
   @GetMapping(
