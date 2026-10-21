@@ -1,8 +1,8 @@
 package com.rental.rental_room.service;
 
-import com.rental.rental_room.api.BusinessException;
 import com.rental.rental_room.api.Requests;
 import com.rental.rental_room.api.Views.SubscriptionView;
+import com.rental.rental_room.common.BusinessException;
 import com.rental.rental_room.common.Database;
 import com.rental.rental_room.contract.Contract;
 import java.util.List;
