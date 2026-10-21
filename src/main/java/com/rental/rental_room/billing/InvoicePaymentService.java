@@ -30,9 +30,7 @@ public class InvoicePaymentService {
             "invoice",
             invoiceId);
     var paid =
-        existingPayments.stream()
-            .map(Payment::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        existingPayments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     var cumulative = paid.add(request.amount());
     if (cumulative.compareTo(invoice.getTotalAmount()) > 0) {
       throw BusinessException.conflict("Payment exceeds the invoice outstanding balance");
@@ -57,7 +55,8 @@ public class InvoicePaymentService {
   @Transactional(readOnly = true)
   public List<PaymentView> payments(Long invoiceId) {
     db.get(Invoice.class, invoiceId);
-    return db.query(
+    return db
+        .query(
             "select p from Payment p where p.invoice.id=:invoice order by p.paidAt, p.id",
             Payment.class,
             "invoice",
