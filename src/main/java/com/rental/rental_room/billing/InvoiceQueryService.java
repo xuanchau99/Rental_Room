@@ -97,7 +97,10 @@ public class InvoiceQueryService {
     var itemsByInvoice =
         items.stream()
             .map(item -> Map.entry(item.getInvoice().getId(), ItemView.of(item)))
-            .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+            .collect(
+                Collectors.groupingBy(
+                    Map.Entry::getKey,
+                    Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
     return invoices.stream()
         .map(
