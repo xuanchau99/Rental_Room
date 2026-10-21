@@ -60,7 +60,8 @@ public class InvoiceQueryService {
             invoice.getId());
     var paid = payments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     var items =
-        db.query(
+        db
+            .query(
                 "select i from InvoiceItem i where i.invoice.id=:invoice order by i.id",
                 InvoiceItem.class,
                 "invoice",
