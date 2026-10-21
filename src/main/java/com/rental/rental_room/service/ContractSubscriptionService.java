@@ -19,12 +19,15 @@ public class ContractSubscriptionService {
   @Transactional(readOnly = true)
   public List<SubscriptionView> list(Long contractId) {
     db.get(Contract.class, contractId);
-    return db.query(
+    return db
+        .query(
             "select s from ContractSubscription s where s.contract.id=:contract order by s.id",
             ContractSubscription.class,
             "contract",
             contractId)
-        .stream().map(SubscriptionView::of).toList();
+        .stream()
+        .map(SubscriptionView::of)
+        .toList();
   }
 
   public List<SubscriptionView> replace(Long contractId, List<Requests.Subscription> requests) {
