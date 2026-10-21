@@ -54,8 +54,7 @@ public class DepositService {
       var summary = summary(contractId);
       var balance = (BigDecimal) summary.get("balance");
       if (request.amount().compareTo(balance) > 0) {
-        throw BusinessException.conflict(
-            "Deposit refund/deduction exceeds remaining balance");
+        throw BusinessException.conflict("Deposit refund/deduction exceeds remaining balance");
       }
     }
     var transaction = new DepositTransaction();
