@@ -11,6 +11,8 @@ import com.rental.rental_room.invoice.InvoiceStatus;
 import com.rental.rental_room.payment.Payment;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,8 +63,7 @@ public class InvoiceQueryService {
             invoice.getId());
     var paid = payments.stream().map(Payment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     var items =
-        db
-            .query(
+        db.query(
                 "select i from InvoiceItem i where i.invoice.id=:invoice order by i.id",
                 InvoiceItem.class,
                 "invoice",
@@ -70,6 +71,48 @@ public class InvoiceQueryService {
             .stream()
             .map(ItemView::of)
             .toList();
+    return toView(invoice, paid, items);
+  }
+
+  private List<InvoiceView> views(List<Invoice> invoices) {
+    if (invoices.isEmpty()) return List.of();
+
+    var ids = invoices.stream().map(Invoice::getId).toList();
+    var payments =
+        db.query(
+            "select p from Payment p where p.invoice.id in :invoiceIds order by p.paidAt, p.id",
+            Payment.class,
+            "invoiceIds",
+            ids);
+    var paidByInvoice =
+        payments.stream()
+            .collect(
+                Collectors.groupingBy(
+                    p -> p.getInvoice().getId(),
+                    Collectors.reducing(BigDecimal.ZERO, Payment::getAmount, BigDecimal::add)));
+
+    var items =
+        db.query(
+            "select i from InvoiceItem i where i.invoice.id in :invoiceIds order by i.id",
+            InvoiceItem.class,
+            "invoiceIds",
+            ids);
+    var itemsByInvoice =
+        items.stream()
+            .map(item -> Map.entry(item.getInvoice().getId(), ItemView.of(item)))
+            .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+
+    return invoices.stream()
+        .map(
+            invoice ->
+                toView(
+                    invoice,
+                    paidByInvoice.getOrDefault(invoice.getId(), BigDecimal.ZERO),
+                    itemsByInvoice.getOrDefault(invoice.getId(), List.of())))
+        .toList();
+  }
+
+  private InvoiceView toView(Invoice invoice, BigDecimal paid, List<ItemView> items) {
     var effectiveStatus = invoice.effectiveStatus(paid, Dates.today());
     return new InvoiceView(
         invoice.getId(),
