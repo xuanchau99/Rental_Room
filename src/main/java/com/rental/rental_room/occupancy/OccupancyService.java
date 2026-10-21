@@ -49,12 +49,15 @@ public class OccupancyService {
   @Transactional(readOnly = true)
   public List<OccupantView> occupants(Long roomId) {
     db.get(Room.class, roomId);
-    return db.query(
+    return db
+        .query(
             "select s from RoomTenant s where s.room.id=:room and s.moveOutDate is null order by s.id",
             RoomTenant.class,
             "room",
             roomId)
-        .stream().map(OccupantView::of).toList();
+        .stream()
+        .map(OccupantView::of)
+        .toList();
   }
 
   public OccupantView addOccupant(Long roomId, Requests.OccupantInput request) {
