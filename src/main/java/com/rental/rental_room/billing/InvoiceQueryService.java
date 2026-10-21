@@ -45,10 +45,7 @@ public class InvoiceQueryService {
             "year",
             year);
     var matching =
-        invoices.stream()
-            .map(this::view)
-            .filter(v -> status == null || v.status() == status)
-            .toList();
+        views(invoices).stream().filter(v -> status == null || v.status() == status).toList();
     int from = Math.min(Math.multiplyExact(page, size), matching.size());
     int to = Math.min(from + size, matching.size());
     return matching.subList(from, to);
