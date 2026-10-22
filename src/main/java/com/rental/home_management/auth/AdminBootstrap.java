@@ -30,25 +30,36 @@ public class AdminBootstrap implements ApplicationRunner {
             UserAccount.class,
             "name",
             properties.admin().username());
+    UserAccount adminUser;
     if (adminOpt.isPresent()) {
-      var u = adminOpt.get();
-      if (u.getRole() != UserRole.SUPER_ADMIN) {
-        u.setRole(UserRole.SUPER_ADMIN);
+      adminUser = adminOpt.get();
+      if (adminUser.getRole() != UserRole.SUPER_ADMIN) {
+        adminUser.setRole(UserRole.SUPER_ADMIN);
       }
-      return;
+      if (environment.acceptsProfiles(Profiles.of("local"))) {
+        adminUser.setPasswordHash(passwords.encode(properties.admin().password()));
+      }
+    } else {
+      var admin = properties.admin();
+      int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 8;
+      if (admin.password().length() < minimum)
+        throw new IllegalArgumentException(
+            "APP_ADMIN_PASSWORD requires at least " + minimum + " characters");
+      adminUser = new UserAccount();
+      adminUser.setUsername(admin.username());
+      adminUser.setPasswordHash(passwords.encode(admin.password()));
+      adminUser.setRole(UserRole.SUPER_ADMIN);
+      adminUser.setEnabled(true);
+      adminUser.setFullName("Quản Trị Viên Hệ Thống");
+      db.save(adminUser);
     }
-    if (db.query("select count(u) from UserAccount u", Long.class).getFirst() != 0) return;
-    var admin = properties.admin();
-    int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 8;
-    if (admin.password().length() < minimum)
-      throw new IllegalArgumentException(
-          "APP_ADMIN_PASSWORD requires at least " + minimum + " characters");
-    var user = new UserAccount();
-    user.setUsername(admin.username());
-    user.setPasswordHash(passwords.encode(admin.password()));
-    user.setRole(UserRole.SUPER_ADMIN);
-    user.setEnabled(true);
-    user.setFullName("Quản Trị Viên Hệ Thống");
-    db.save(user);
+    db.em()
+        .createQuery("update Property p set p.owner = :admin where p.owner is null")
+        .setParameter("admin", adminUser)
+        .executeUpdate();
+    db.em()
+        .createQuery("update Tenant t set t.owner = :admin where t.owner is null")
+        .setParameter("admin", adminUser)
+        .executeUpdate();
   }
 }

@@ -44,6 +44,7 @@ public class CatalogService {
     var p = id == null ? new Property() : db.lock(Property.class, id);
     if (id != null
         && !SecurityUtils.isSuperAdmin()
+        && ownerId != null
         && (p.getOwner() == null || !p.getOwner().getId().equals(ownerId))) {
       throw BusinessException.missing("Property not found");
     }

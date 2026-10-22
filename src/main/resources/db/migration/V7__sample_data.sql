@@ -1,5 +1,11 @@
 -- V7__sample_data.sql: Khởi tạo 10 dữ liệu mẫu cho mỗi bảng
 
+DO $SAMPLE_DATA$
+BEGIN
+    -- Chỉ nạp dữ liệu mẫu nếu không phải môi trường test/local ('Dãy trọ 01') và chưa từng nạp dữ liệu mẫu ('Chung cư Mini Cầu Giấy')
+    IF NOT EXISTS (SELECT 1 FROM properties WHERE name = 'Dãy trọ 01')
+       AND NOT EXISTS (SELECT 1 FROM properties WHERE name = 'Chung cư Mini Cầu Giấy') THEN
+
 -- 1. properties (10 tòa nhà / khu trọ)
 INSERT INTO properties (name, address) VALUES
 ('Chung cư Mini Cầu Giấy', 'Số 12 Ngõ 68 Cầu Giấy, P. Quan Hoa, Q. Cầu Giấy, Hà Nội'),
@@ -69,8 +75,8 @@ INSERT INTO room_tenants (room_id, tenant_id, contract_id, role, move_in_date, m
 UPDATE services SET price = 100000.00 WHERE lower(name) = 'wi-fi';
 INSERT INTO services (name, calculation_type, price, active) VALUES
 ('Vệ sinh rác thải', 'FIXED', 50000.00, true),
-('Gửi xe máy', 'PER_ROOM', 120000.00, true),
-('Gửi xe đạp điện', 'PER_ROOM', 80000.00, true),
+('Gửi xe máy', 'PER_VEHICLE', 120000.00, true),
+('Gửi xe đạp điện', 'PER_VEHICLE', 80000.00, true),
 ('Quản lý tòa nhà', 'FIXED', 150000.00, true),
 ('Giặt sấy chung', 'PER_PERSON', 100000.00, true),
 ('Thang máy', 'PER_PERSON', 50000.00, true),
@@ -195,9 +201,8 @@ INSERT INTO electricity_revisions (reading_id, old_reading, new_reading, changed
 (1, 1380.000, 1385.000, 'admin', 'Cập nhật lần 2 sau khi đối soát đồng hồ tổng'),
 (2, 2270.000, 2280.000, 'admin', 'Đối chiếu biên bản bàn giao đầu vào');
 
--- 16. user_accounts (10 tài khoản người dùng: admin chau12345 + 9 staff/owner khác với mật khẩu staff12345)
+-- 16. user_accounts (10 tài khoản người dùng: owner_chau + 9 staff/owner khác với mật khẩu staff12345)
 INSERT INTO user_accounts (username, password_hash, role, enabled) VALUES
-('admin', '$2a$10$E5le9Qerw5y3MNql04StC.GxOIjVEyrwNBYYPIP/mEaWPIXNUowPG', 'OWNER', true),
 ('owner_chau', '$2a$10$E5le9Qerw5y3MNql04StC.GxOIjVEyrwNBYYPIP/mEaWPIXNUowPG', 'OWNER', true),
 ('staff_caugiay', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
 ('staff_thanhxuan', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
@@ -206,5 +211,9 @@ INSERT INTO user_accounts (username, password_hash, role, enabled) VALUES
 ('staff_tanbinh', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
 ('staff_quan10', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
 ('staff_thuduc', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
-('staff_danang', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true)
+('staff_danang', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true),
+('staff_haichau', '$2a$10$cwKFWJG52k1TsT72/E.5X.tM.pu.3Ze.F.kdxJxjGAIpBPjJl.u8u', 'STAFF', true)
 ON CONFLICT (username) DO NOTHING;
+
+    END IF;
+END $SAMPLE_DATA$;
