@@ -2,6 +2,7 @@ package com.rental.home_management.api;
 
 import static com.rental.home_management.api.Views.*;
 
+import com.rental.home_management.auth.SecurityUtils;
 import com.rental.home_management.common.*;
 import com.rental.home_management.property.*;
 import com.rental.home_management.room.*;

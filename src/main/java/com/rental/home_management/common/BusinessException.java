@@ -21,4 +21,12 @@ public class BusinessException extends RuntimeException {
   public static BusinessException missing(String message) {
     return new BusinessException(HttpStatus.NOT_FOUND, message);
   }
+
+  public static BusinessException notFound(String message) {
+    return missing(message);
+  }
+
+  public static BusinessException forbidden(String message) {
+    return new BusinessException(HttpStatus.FORBIDDEN, message);
+  }
 }
