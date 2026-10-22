@@ -26,7 +26,7 @@ public class AdminBootstrap implements ApplicationRunner {
     db.em().createNativeQuery("select pg_advisory_xact_lock(920019)").getSingleResult();
     if (db.query("select count(u) from UserAccount u", Long.class).getFirst() != 0) return;
     var admin = properties.admin();
-    int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 12;
+    int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 8;
     if (admin.password().length() < minimum)
       throw new IllegalArgumentException(
           "APP_ADMIN_PASSWORD requires at least " + minimum + " characters");
