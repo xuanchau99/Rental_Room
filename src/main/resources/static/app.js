@@ -3,7 +3,10 @@
 const $ = (id) => document.getElementById(id);
 const state = {tokens: null, properties: [], rooms: [], tenants: [], contracts: [], services: [], serviceUsages: [], users: [], worksheet: [], electricity: [], water: [], invoices: [], reminders: [], dashboard: null};
 const owner = () => {
-  try { return JSON.parse(atob(state.tokens.accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).role === "OWNER"; }
+  try {
+    const role = JSON.parse(atob(state.tokens.accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).role;
+    return role === "OWNER" || role === "SUPER_ADMIN";
+  }
   catch { return false; }
 };
 const money = (value) => {
@@ -105,10 +108,22 @@ async function reload() {
   const selected = assertPeriod();
   const params = query({...selected, size: 100});
   const [properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders, serviceUsages, users] = await Promise.all([
-    api("/properties"), api("/rooms?size=100"), api("/tenants?size=100"), api("/contracts?size=100"), api("/services?size=100"),
-    api(`/dashboard?${query(selected)}`), api(`/meter-workflow?${query(selected)}`),
-    api(`/electricity-readings?${params}`), api(`/water-readings?${params}`), api(`/invoices?${params}`), api("/reminders?dueWithinDays=7"),
-    api("/service-usages?size=100"), owner() ? api("/users") : Promise.resolve([])
+    api("/properties").catch(() => []),
+    api("/rooms?size=100").catch(() => []),
+    api("/tenants?size=100").catch(() => []),
+    api("/contracts?size=100").catch(() => []),
+    api("/services?size=100").catch(() => []),
+    api(`/dashboard?${query(selected)}`).catch(() => ({
+      totalRooms: 0, occupied: 0, vacant: 0, billed: 0, paid: 0, outstanding: 0,
+      debts: [], rent: 0, electricity: 0, water: 0, services: 0, other: 0, discounts: 0
+    })),
+    api(`/meter-workflow?${query(selected)}`).catch(() => []),
+    api(`/electricity-readings?${params}`).catch(() => []),
+    api(`/water-readings?${params}`).catch(() => []),
+    api(`/invoices?${params}`).catch(() => []),
+    api("/reminders?dueWithinDays=7").catch(() => []),
+    api("/service-usages?size=100").catch(() => []),
+    owner() ? api("/users").catch(() => []) : Promise.resolve([])
   ]);
   if (version !== reloadVersion) return;
   Object.assign(state, {properties, rooms, tenants, contracts, services, dashboard, worksheet, electricity, water, invoices, reminders, serviceUsages, users});
@@ -128,9 +143,9 @@ function badge(status) {
   return node("span", `badge ${["VACANT", "PAID"].includes(status) ? "good" : ["OVERDUE", "MAINTENANCE"].includes(status) ? "bad" : "warn"}`, label);
 }
 function renderOverview() {
-  const summary = state.dashboard;
+  const summary = state.dashboard || {totalRooms: 0, occupied: 0, vacant: 0, billed: 0, paid: 0, outstanding: 0, debts: [], rent: 0, electricity: 0, water: 0, services: 0, other: 0, discounts: 0};
   const stats = [
-    ["Tổng phòng", summary.totalRooms], ["Đang thuê", summary.occupied], ["Phòng trống", summary.vacant],
+    ["Tổng phòng", summary.totalRooms || 0], ["Đang thuê", summary.occupied || 0], ["Phòng trống", summary.vacant || 0],
     ["Đã lập hóa đơn", money(summary.billed)], ["Đã thu", money(summary.paid)], ["Còn nợ", money(summary.outstanding)]
   ];
   const target = $("stats"); target.replaceChildren();
@@ -138,8 +153,8 @@ function renderOverview() {
     const card = node("div", "stat"); card.append(node("span", "", label), node("strong", "", value)); target.append(card);
   });
   const debts = $("debt-list"); debts.replaceChildren();
-  if (!summary.debts.length) debts.append(node("div", "empty", "Không có hóa đơn còn nợ trong kỳ."));
-  summary.debts.forEach((debt) => {
+  if (!summary.debts || !summary.debts.length) debts.append(node("div", "empty", "Không có hóa đơn còn nợ trong kỳ."));
+  (summary.debts || []).forEach((debt) => {
     const row = node("div", "kv"); row.append(node("span", "", debt.roomNumber), node("strong", "", money(debt.outstanding))); debts.append(row);
   });
   const revenue = $("revenue-list"); revenue.replaceChildren();
@@ -305,6 +320,25 @@ function renderInvoices() {
     }
     row.append(actions); body.append(row);
   });
+  const remindersList = $("reminders-list");
+  if (remindersList) {
+    remindersList.replaceChildren();
+    if (!state.reminders || !state.reminders.length) {
+      remindersList.className = "empty";
+      remindersList.textContent = "Chưa có dữ liệu.";
+    } else {
+      remindersList.className = "";
+      state.reminders.forEach((r) => {
+        const item = node("div", "kv");
+        item.append(node("span", "", `Phòng ${roomName(r.roomId)} (${r.number}) · Hạn ${r.dueDate}`), node("strong", "", money(r.outstanding)));
+        remindersList.append(item);
+      });
+    }
+  }
+  const singleRoom = $("single-invoice-room");
+  if (singleRoom) {
+    fillSelect(singleRoom, state.rooms.map(r => [r.roomNumber, r.id]), "Chọn phòng");
+  }
 }
 function render() { renderOverview(); renderPeople(); renderMeters(); renderInvoices(); window.renderExtras?.(); }
 
