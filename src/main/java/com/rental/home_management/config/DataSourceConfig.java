@@ -59,10 +59,24 @@ public class DataSourceConfig {
       if (!url.contains("localhost") && !url.contains(":postgres:") && !url.contains("sslmode=")) {
         url += (url.contains("?") ? "&" : "?") + "sslmode=require";
       }
+      if (url.contains(":6543") && !url.contains("prepareThreshold=")) {
+        url += (url.contains("?") ? "&" : "?") + "prepareThreshold=0";
+      }
     }
 
-    org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DataSourceConfig.class);
-    log.info("Configuring DataSource with sanitized URL: {}", url);
+    if (url != null) {
+      properties.setUrl(url);
+    }
+    if (username != null) {
+      properties.setUsername(username.trim());
+    }
+    if (password != null) {
+      properties.setPassword(password.trim());
+    }
+
+    System.out.println(">>> [DataSourceConfig] Initializing DataSource:");
+    System.out.println(">>> URL: " + properties.getUrl());
+    System.out.println(">>> User: " + properties.getUsername());
 
     var dataSource = properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
     if (url != null) {
