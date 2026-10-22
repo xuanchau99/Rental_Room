@@ -61,6 +61,9 @@ public class DataSourceConfig {
       }
     }
 
+    org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DataSourceConfig.class);
+    log.info("Configuring DataSource with sanitized URL: {}", url);
+
     var dataSource = properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
     if (url != null) {
       dataSource.setJdbcUrl(url);
