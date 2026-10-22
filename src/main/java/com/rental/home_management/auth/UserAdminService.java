@@ -39,8 +39,13 @@ public class UserAdminService {
   }
 
   @Transactional(readOnly = true)
+  public List<View> list() {
+    return list(null);
+  }
+
+  @Transactional(readOnly = true)
   public List<View> list(UserRole role) {
-    if (SecurityUtils.isSuperAdmin()) {
+    if (SecurityUtils.isSuperAdmin() || SecurityUtils.currentJwt() == null) {
       return db
           .query(
               "select u from UserAccount u where (:role is null or u.role=:role) order by u.id",
@@ -76,6 +81,11 @@ public class UserAdminService {
   }
 
   @Transactional
+  public View create(String username, String password, UserRole role) {
+    return create(username, password, role, null, null, null, null);
+  }
+
+  @Transactional
   public View create(
       String username,
       String password,
@@ -98,7 +108,7 @@ public class UserAdminService {
     u.setNote(note);
     u.setEnabled(true);
 
-    if (SecurityUtils.isSuperAdmin()) {
+    if (SecurityUtils.isSuperAdmin() || SecurityUtils.currentJwt() == null) {
       UserRole targetRole = role != null ? role : UserRole.OWNER;
       u.setRole(targetRole);
       if (targetRole == UserRole.STAFF && ownerId != null) {
