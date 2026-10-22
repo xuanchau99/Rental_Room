@@ -27,7 +27,7 @@ jobs:
       - name: Verify application and PostgreSQL
         run: |
           curl --fail --retry 30 --retry-delay 2 --retry-all-errors http://127.0.0.1:8080/v3/api-docs
-          docker compose exec -T postgres psql -U rental -d rental_room -c "SELECT COUNT(*) FROM rooms" | tee /tmp/room-count.txt
+          docker compose exec -T postgres psql -U rental -d home_management -c "SELECT COUNT(*) FROM rooms" | tee /tmp/room-count.txt
           grep -Eq '^[[:space:]]*9[[:space:]]*$' /tmp/room-count.txt
       - name: Docker logs on failure
         if: failure()

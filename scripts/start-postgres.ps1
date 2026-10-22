@@ -31,10 +31,10 @@ try {
     & $dockerExecutable compose up -d --wait --wait-timeout 120 postgres
     if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL startup failed. Check docker compose logs postgres.' }
 
-    & $dockerExecutable compose exec -T postgres pg_isready -U rental -d rental_room
+    & $dockerExecutable compose exec -T postgres pg_isready -U rental -d home_management
     if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL is not ready.' }
 
-    Write-Host 'PostgreSQL ready: localhost:5432 / database rental_room / user rental'
+    Write-Host 'PostgreSQL ready: localhost:5432 / database home_management / user rental'
     if ($RunApplication) {
         & .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'
         if ($LASTEXITCODE -ne 0) { throw 'Spring Boot startup failed.' }

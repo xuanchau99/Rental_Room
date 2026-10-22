@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.rental</groupId>
-    <artifactId>rental_room</artifactId>
+    <artifactId>home_management</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>rental_room</name>
+    <name>home_management</name>
     <description>Quản lý phòng trọ</description>
 
     <properties>

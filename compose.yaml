@@ -3,7 +3,7 @@ services:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_DB: rental_room
+      POSTGRES_DB: home_management
       POSTGRES_USER: rental
       POSTGRES_PASSWORD: ${DB_PASSWORD:-rental_local}
     ports:
@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rental -d rental_room"]
+      test: ["CMD-SHELL", "pg_isready -U rental -d home_management"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: local
-      DB_URL: jdbc:postgresql://postgres:5432/rental_room
+      DB_URL: jdbc:postgresql://postgres:5432/home_management
       DB_USERNAME: rental
       DB_PASSWORD: ${DB_PASSWORD:-rental_local}
       APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
