@@ -142,8 +142,6 @@ class EvidenceService {
   }
 
   public Map<String, String> upload(Long id, MultipartFile file) throws IOException {
-    var initial = db.get(ElectricityMeter.class, id);
-    checkReadingOwner(initial);
     var bytes = file.getBytes();
     if (bytes.length < 8 || bytes.length > 2_000_000)
       throw BusinessException.invalid("Image must be 1..2 MB");
@@ -163,6 +161,7 @@ class EvidenceService {
               .execute(
                   status -> {
                     var reading = db.lock(ElectricityMeter.class, id);
+                    checkReadingOwner(reading);
                     var previous = reading.getImageUrl();
                     reading.setImageUrl(name);
                     return previous;
