@@ -52,10 +52,6 @@ public class DataSourceConfig {
 
     if (url != null) {
       url = url.replaceAll("\\s+", "");
-      url =
-          url.replace("&sslfactory=org.postgresql.ssl.NonValidatingFactory", "")
-              .replace("?sslfactory=org.postgresql.ssl.NonValidatingFactory&", "?")
-              .replace("?sslfactory=org.postgresql.ssl.NonValidatingFactory", "");
       if (!url.contains("localhost") && !url.contains(":postgres:") && !url.contains("sslmode=")) {
         url += (url.contains("?") ? "&" : "?") + "sslmode=require";
       }
