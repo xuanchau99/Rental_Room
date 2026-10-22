@@ -54,3 +54,7 @@ SET owner_id = COALESCE(
     (SELECT id FROM user_accounts WHERE username = 'owner_chau'),
     (SELECT id FROM user_accounts WHERE username = 'admin')
 );
+
+-- Chuẩn hóa loại hình tính phí dịch vụ cũ nếu có
+UPDATE services SET calculation_type = 'PER_VEHICLE' WHERE calculation_type = 'PER_ROOM';
+
