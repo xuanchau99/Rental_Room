@@ -24,6 +24,7 @@ public class ReadingService {
 
   public ReadingView electricity(Requests.ElectricityInput r) {
     var room = db.lock(Room.class, r.roomId());
+    checkRoomOwner(room);
     var p = policy.period(r.month(), r.year());
     var c = policy.contract(room.getId(), p);
     ensureUnbilled(room.getId(), p);
@@ -57,6 +58,7 @@ public class ReadingService {
 
   public ReadingView water(Requests.WaterInput r) {
     var room = db.lock(Room.class, r.roomId());
+    checkRoomOwner(room);
     var p = policy.period(r.month(), r.year());
     var c = policy.contract(room.getId(), p);
     ensureUnbilled(room.getId(), p);
@@ -192,12 +194,18 @@ public class ReadingService {
       Long roomId, Integer month, Integer year, int page, int size) {
     if (month != null && (month < 1 || month > 12))
       throw BusinessException.invalid("Invalid month");
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     return db
         .page(
-            "select e from ElectricityMeter e where (:room is null or e.room.id=:room) and (:month is null or e.month=:month) and (:year is null or e.year=:year) order by e.year desc,e.month desc,e.id",
+            "select e from ElectricityMeter e where (:ownerId is null or e.room.property.owner.id=:ownerId) and (:room is null or e.room.id=:room) and (:month is null or e.month=:month) and (:year is null or e.year=:year) order by e.year desc,e.month desc,e.id",
             ElectricityMeter.class,
             page,
             size,
+            "ownerId",
+            ownerId,
             "room",
             roomId,
             "month",
@@ -213,12 +221,18 @@ public class ReadingService {
   public List<ReadingView> water(Long roomId, Integer month, Integer year, int page, int size) {
     if (month != null && (month < 1 || month > 12))
       throw BusinessException.invalid("Invalid month");
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     return db
         .page(
-            "select e from WaterMeter e where (:room is null or e.room.id=:room) and (:month is null or e.month=:month) and (:year is null or e.year=:year) order by e.year desc,e.month desc,e.id",
+            "select e from WaterMeter e where (:ownerId is null or e.room.property.owner.id=:ownerId) and (:room is null or e.room.id=:room) and (:month is null or e.month=:month) and (:year is null or e.year=:year) order by e.year desc,e.month desc,e.id",
             WaterMeter.class,
             page,
             size,
+            "ownerId",
+            ownerId,
             "room",
             roomId,
             "month",
@@ -233,25 +247,35 @@ public class ReadingService {
   @Transactional(readOnly = true)
   public List<Map<String, Object>> worksheet(int month, int year, Long property) {
     var p = policy.period(month, year);
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     var rooms =
         db.query(
-            "select r from Room r where (:property is null or r.property.id=:property) order by r.code",
+            "select r from Room r where (:ownerId is null or r.property.owner.id=:ownerId) and (:property is null or r.property.id=:property) order by r.code",
             Room.class,
+            "ownerId",
+            ownerId,
             "property",
             property);
     // Fetch all prior readings in two queries, never one query per room.
     var electricity =
         db.query(
-            "select e from ElectricityMeter e where e.month=:month and e.year=:year",
+            "select e from ElectricityMeter e where (:ownerId is null or e.room.property.owner.id=:ownerId) and e.month=:month and e.year=:year",
             ElectricityMeter.class,
+            "ownerId",
+            ownerId,
             "month",
             p.minusMonths(1).getMonthValue(),
             "year",
             p.minusMonths(1).getYear());
     var water =
         db.query(
-            "select e from WaterMeter e where e.month=:month and e.year=:year",
+            "select e from WaterMeter e where (:ownerId is null or e.room.property.owner.id=:ownerId) and e.month=:month and e.year=:year",
             WaterMeter.class,
+            "ownerId",
+            ownerId,
             "month",
             p.minusMonths(1).getMonthValue(),
             "year",
@@ -275,5 +299,16 @@ public class ReadingService {
               return row;
             })
         .toList();
+  }
+
+  private void checkRoomOwner(Room room) {
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (room.getProperty().getOwner() == null
+              || !room.getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Room not found");
+      }
+    }
   }
 }

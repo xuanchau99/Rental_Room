@@ -24,6 +24,19 @@ public class AdminBootstrap implements ApplicationRunner {
   public void run(ApplicationArguments args) {
     // Serialize bootstrap across backend replicas.
     db.em().createNativeQuery("select pg_advisory_xact_lock(920019)").getSingleResult();
+    var adminOpt =
+        db.first(
+            "select u from UserAccount u where u.username=:name",
+            UserAccount.class,
+            "name",
+            properties.admin().username());
+    if (adminOpt.isPresent()) {
+      var u = adminOpt.get();
+      if (u.getRole() != UserRole.SUPER_ADMIN) {
+        u.setRole(UserRole.SUPER_ADMIN);
+      }
+      return;
+    }
     if (db.query("select count(u) from UserAccount u", Long.class).getFirst() != 0) return;
     var admin = properties.admin();
     int minimum = environment.acceptsProfiles(Profiles.of("local")) ? 5 : 8;
@@ -33,8 +46,9 @@ public class AdminBootstrap implements ApplicationRunner {
     var user = new UserAccount();
     user.setUsername(admin.username());
     user.setPasswordHash(passwords.encode(admin.password()));
-    user.setRole(UserRole.OWNER);
+    user.setRole(UserRole.SUPER_ADMIN);
     user.setEnabled(true);
+    user.setFullName("Quản Trị Viên Hệ Thống");
     db.save(user);
   }
 }

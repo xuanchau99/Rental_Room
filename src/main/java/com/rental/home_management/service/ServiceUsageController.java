@@ -87,6 +87,14 @@ class UsageService {
             "service",
             r.serviceId())
         .isEmpty()) throw BusinessException.conflict("Service is not subscribed");
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (c.getRoom().getProperty().getOwner() == null
+              || !c.getRoom().getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Contract not found");
+      }
+    }
     policy.contract(c.getRoom().getId(), period);
     var u = new ServiceUsage();
     u.setContract(c);
@@ -101,12 +109,18 @@ class UsageService {
 
   @Transactional(readOnly = true)
   public List<ServiceUsageController.View> list(Long contract, int page, int size) {
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     return db
         .page(
-            "select u from ServiceUsage u where (:contract is null or u.contract.id=:contract) order by u.id desc",
+            "select u from ServiceUsage u where (:ownerId is null or u.contract.room.property.owner.id=:ownerId) and (:contract is null or u.contract.id=:contract) order by u.id desc",
             ServiceUsage.class,
             page,
             size,
+            "ownerId",
+            ownerId,
             "contract",
             contract)
         .stream()

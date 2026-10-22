@@ -24,4 +24,30 @@ public class UserAccount extends BaseEntity {
 
   @Column(nullable = false)
   private boolean enabled;
+
+  @Column(length = 150)
+  private String fullName;
+
+  @Column(length = 30)
+  private String phone;
+
+  @Column(length = 1000)
+  private String note;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_id")
+  private UserAccount owner;
+
+  public Long resolveOwnerId() {
+    if (role == UserRole.SUPER_ADMIN) {
+      return null;
+    }
+    if (role == UserRole.OWNER) {
+      return getId();
+    }
+    if (role == UserRole.STAFF && owner != null) {
+      return owner.getId();
+    }
+    return getId();
+  }
 }

@@ -29,6 +29,14 @@ public class InvoiceService {
   @Transactional
   public InvoiceView generate(Requests.Generate r) {
     var room = db.lock(Room.class, r.roomId());
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (room.getProperty().getOwner() == null
+              || !room.getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Room not found");
+      }
+    }
     var period = policy.period(r.month(), r.year());
     if (existing(room.getId(), period).isPresent())
       throw BusinessException.conflict("Invoice already exists for room/month/year");
@@ -203,11 +211,18 @@ public class InvoiceService {
   // Each room is independent: one invalid room cannot roll back successful rooms.
   @Transactional(readOnly = true)
   public List<Room> billableRooms(Long property, YearMonth period) {
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     return db.query(
         "select distinct r from Room r join Contract c on c.room=r "
-            + "where (:property is null or r.property.id=:property) and c.status<>:pending "
+            + "where (:ownerId is null or r.property.owner.id=:ownerId) "
+            + "and (:property is null or r.property.id=:property) and c.status<>:pending "
             + "and c.startDate<=:last and (c.endDate is null or c.endDate>=:first) order by r.id",
         Room.class,
+        "ownerId",
+        ownerId,
         "property",
         property,
         "pending",

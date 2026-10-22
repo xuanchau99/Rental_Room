@@ -22,13 +22,13 @@ public class CatalogController {
 
   @PostMapping("/properties")
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public PropertyView property(@Valid @RequestBody Requests.PropertyInput r) {
     return catalog.property(null, r);
   }
 
   @PutMapping("/properties/{id}")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public PropertyView property(
       @PathVariable Long id, @Valid @RequestBody Requests.PropertyInput r) {
     return catalog.property(id, r);
@@ -50,20 +50,20 @@ public class CatalogController {
 
   @PostMapping("/rooms")
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public RoomView createRoom(@Valid @RequestBody Requests.RoomInput r) {
     return catalog.room(null, r);
   }
 
   @PutMapping("/rooms/{id}")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public RoomView room(@PathVariable Long id, @Valid @RequestBody Requests.RoomInput r) {
     return catalog.room(id, r);
   }
 
   @DeleteMapping("/rooms/{id}")
   @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public void deleteRoom(@PathVariable Long id) {
     catalog.deleteRoom(id);
   }
@@ -103,13 +103,13 @@ public class CatalogController {
 
   @PostMapping("/services")
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ServiceView createService(@Valid @RequestBody Requests.ServiceInput r) {
     return catalog.service(null, r);
   }
 
   @PutMapping("/services/{id}")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ServiceView service(@PathVariable Long id, @Valid @RequestBody Requests.ServiceInput r) {
     return catalog.service(id, r);
   }

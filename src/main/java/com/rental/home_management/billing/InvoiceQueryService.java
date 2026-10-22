@@ -24,7 +24,16 @@ public class InvoiceQueryService {
   private final Database db;
 
   public InvoiceView get(Long id) {
-    return view(db.get(Invoice.class, id));
+    var invoice = db.get(Invoice.class, id);
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (invoice.getRoom().getProperty().getOwner() == null
+              || !invoice.getRoom().getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Invoice not found");
+      }
+    }
+    return view(invoice);
   }
 
   public List<InvoiceView> list(
@@ -32,12 +41,19 @@ public class InvoiceQueryService {
     if (page < 0 || size < 1 || size > 100) {
       throw BusinessException.invalid("page >= 0 and size 1..100 required");
     }
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     var invoices =
         db.query(
-            "select i from Invoice i where (:room is null or i.room.id=:room) "
+            "select i from Invoice i where (:ownerId is null or i.room.property.owner.id=:ownerId) "
+                + "and (:room is null or i.room.id=:room) "
                 + "and (:month is null or i.month=:month) "
                 + "and (:year is null or i.year=:year) order by i.year desc, i.month desc, i.id desc",
             Invoice.class,
+            "ownerId",
+            ownerId,
             "room",
             roomId,
             "month",

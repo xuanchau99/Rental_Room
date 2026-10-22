@@ -56,7 +56,7 @@ public class InvoiceController {
   }
 
   @PostMapping("/{id}/cancel")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public InvoiceView cancel(@PathVariable Long id) {
     return invoices.cancel(id);
   }

@@ -41,7 +41,7 @@ public class ElectricityEvidenceController {
       java.time.Instant changedAt) {}
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER', 'STAFF')")
   public com.rental.home_management.api.Views.ReadingView revise(
       @PathVariable Long id, @Valid @RequestBody Correction r, @AuthenticationPrincipal Jwt jwt) {
     return evidence.revise(id, r, jwt.getSubject());
@@ -75,6 +75,7 @@ class EvidenceService {
   public com.rental.home_management.api.Views.ReadingView revise(
       Long id, ElectricityEvidenceController.Correction input, String actor) {
     var first = db.get(ElectricityMeter.class, id);
+    checkReadingOwner(first);
     db.lock(Room.class, first.getRoom().getId());
     var reading = db.lock(ElectricityMeter.class, id);
     var period = YearMonth.of(reading.getYear(), reading.getMonth());
@@ -119,7 +120,8 @@ class EvidenceService {
 
   @Transactional(readOnly = true)
   public List<ElectricityEvidenceController.History> history(Long id) {
-    db.get(ElectricityMeter.class, id);
+    var reading = db.get(ElectricityMeter.class, id);
+    checkReadingOwner(reading);
     return db
         .query(
             "select h from ElectricityRevision h where h.reading.id=:id order by h.id",
@@ -140,6 +142,8 @@ class EvidenceService {
   }
 
   public Map<String, String> upload(Long id, MultipartFile file) throws IOException {
+    var initial = db.get(ElectricityMeter.class, id);
+    checkReadingOwner(initial);
     var bytes = file.getBytes();
     if (bytes.length < 8 || bytes.length > 2_000_000)
       throw BusinessException.invalid("Image must be 1..2 MB");
@@ -184,7 +188,9 @@ class EvidenceService {
   public ResponseEntity<byte[]> download(Long id) throws IOException {
     var transaction = new TransactionTemplate(transactionManager);
     transaction.setReadOnly(true);
-    var name = transaction.execute(status -> db.get(ElectricityMeter.class, id).getImageUrl());
+    var reading = transaction.execute(status -> db.get(ElectricityMeter.class, id));
+    checkReadingOwner(reading);
+    var name = reading.getImageUrl();
     if (name == null || !name.matches("[a-f0-9-]{36}\\.(png|jpg)"))
       throw BusinessException.missing("No uploaded image");
     var file = Path.of(properties.images().root()).toAbsolutePath().normalize().resolve(name);
@@ -192,5 +198,16 @@ class EvidenceService {
     return ResponseEntity.ok()
         .contentType(name.endsWith(".png") ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG)
         .body(Files.readAllBytes(file));
+  }
+
+  private void checkReadingOwner(ElectricityMeter reading) {
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (reading.getRoom().getProperty().getOwner() == null
+              || !reading.getRoom().getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Reading not found");
+      }
+    }
   }
 }

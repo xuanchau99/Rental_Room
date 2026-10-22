@@ -107,7 +107,7 @@ public class AuthService {
 
   private Tokens issue(UserAccount user) {
     Instant now = Instant.now();
-    var claims =
+    var claimsBuilder =
         JwtClaimsSet.builder()
             .issuer("rental-room")
             .subject(user.getUsername())
@@ -115,7 +115,13 @@ public class AuthService {
             .expiresAt(now.plusSeconds(900))
             .id(UUID.randomUUID().toString())
             .claim("role", user.getRole().name())
-            .build();
+            .claim("userId", user.getId());
+
+    Long ownerId = user.resolveOwnerId();
+    if (ownerId != null) {
+      claimsBuilder.claim("ownerId", ownerId);
+    }
+    var claims = claimsBuilder.build();
     String access =
         encoder
             .encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))

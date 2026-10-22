@@ -17,4 +17,8 @@ public class Property extends BaseEntity {
 
   @Column(length = 255)
   private String address;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_id")
+  private com.rental.home_management.auth.UserAccount owner;
 }

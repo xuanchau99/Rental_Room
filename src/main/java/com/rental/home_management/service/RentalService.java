@@ -25,4 +25,8 @@ public class RentalService extends BaseEntity {
 
   @Column(nullable = false)
   private boolean active;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_id")
+  private com.rental.home_management.auth.UserAccount owner;
 }

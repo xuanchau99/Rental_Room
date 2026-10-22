@@ -23,6 +23,7 @@ public class InvoicePaymentService {
 
   public PaymentView pay(Long invoiceId, Requests.Pay request) {
     var invoice = db.lock(Invoice.class, invoiceId);
+    checkOwnership(invoice);
     var existingPayments =
         db.query(
             "select p from Payment p where p.invoice.id=:invoice",
@@ -54,7 +55,8 @@ public class InvoicePaymentService {
 
   @Transactional(readOnly = true)
   public List<PaymentView> payments(Long invoiceId) {
-    db.get(Invoice.class, invoiceId);
+    var invoice = db.get(Invoice.class, invoiceId);
+    checkOwnership(invoice);
     return db
         .query(
             "select p from Payment p where p.invoice.id=:invoice order by p.paidAt, p.id",
@@ -68,6 +70,7 @@ public class InvoicePaymentService {
 
   public InvoiceView cancel(Long invoiceId) {
     var invoice = db.lock(Invoice.class, invoiceId);
+    checkOwnership(invoice);
     try {
       invoice.cancel();
     } catch (IllegalStateException ex) {
@@ -75,5 +78,16 @@ public class InvoicePaymentService {
     }
     db.em().flush();
     return queries.get(invoiceId);
+  }
+
+  private void checkOwnership(Invoice invoice) {
+    if (!com.rental.home_management.auth.SecurityUtils.isSuperAdmin()) {
+      Long ownerId = com.rental.home_management.auth.SecurityUtils.currentOwnerId();
+      if (ownerId != null
+          && (invoice.getRoom().getProperty().getOwner() == null
+              || !invoice.getRoom().getProperty().getOwner().getId().equals(ownerId))) {
+        throw BusinessException.notFound("Invoice not found");
+      }
+    }
   }
 }

@@ -41,18 +41,26 @@ public class DashboardService {
   @Transactional(readOnly = true)
   public Summary summary(int month, int year, Long property) {
     var p = Dates.period(month, year);
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     var rooms =
         db.query(
-            "select r from Room r where (:property is null or r.property.id=:property)",
+            "select r from Room r where (:ownerId is null or r.property.owner.id=:ownerId) and (:property is null or r.property.id=:property)",
             Room.class,
+            "ownerId",
+            ownerId,
             "property",
             property);
     long occupied = rooms.stream().filter(r -> r.getStatus() == RoomStatus.OCCUPIED).count();
     long vacant = rooms.stream().filter(r -> r.getStatus() == RoomStatus.VACANT).count();
     var invoices =
         db.query(
-            "select i from Invoice i join fetch i.room where i.month=:month and i.year=:year and (:property is null or i.room.property.id=:property) and i.status<>:cancel",
+            "select i from Invoice i join fetch i.room where (:ownerId is null or i.room.property.owner.id=:ownerId) and i.month=:month and i.year=:year and (:property is null or i.room.property.id=:property) and i.status<>:cancel",
             Invoice.class,
+            "ownerId",
+            ownerId,
             "month",
             month,
             "year",
@@ -97,8 +105,10 @@ public class DashboardService {
     BigDecimal cash = Money.ZERO;
     var incoming =
         db.query(
-            "select coalesce(sum(p.amount),0) from Payment p where p.paidAt>=:from and p.paidAt<:to and (:property is null or p.invoice.room.property.id=:property)",
+            "select coalesce(sum(p.amount),0) from Payment p where (:ownerId is null or p.invoice.room.property.owner.id=:ownerId) and p.paidAt>=:from and p.paidAt<:to and (:property is null or p.invoice.room.property.id=:property)",
             BigDecimal.class,
+            "ownerId",
+            ownerId,
             "from",
             p.atDay(1).atStartOfDay(ZoneId.of("Asia/Bangkok")).toInstant(),
             "to",

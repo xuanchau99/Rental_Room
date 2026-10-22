@@ -33,11 +33,18 @@ public class InvoiceExportDataService {
       String status) {}
 
   public List<ExportRow> rows(int month, int year, Long propertyId) {
+    Long ownerId =
+        com.rental.home_management.auth.SecurityUtils.isSuperAdmin()
+            ? null
+            : com.rental.home_management.auth.SecurityUtils.currentOwnerId();
     var invoices =
         db.query(
-            "select i from Invoice i where i.month=:month and i.year=:year "
+            "select i from Invoice i where (:ownerId is null or i.room.property.owner.id=:ownerId) "
+                + "and i.month=:month and i.year=:year "
                 + "and (:propertyId is null or i.room.property.id=:propertyId) order by i.room.id",
             Invoice.class,
+            "ownerId",
+            ownerId,
             "month",
             month,
             "year",

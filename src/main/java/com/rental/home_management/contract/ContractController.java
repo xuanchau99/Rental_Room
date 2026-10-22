@@ -31,25 +31,25 @@ public class ContractController {
 
   @PostMapping("/contracts")
   @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ContractView create(@Valid @RequestBody Requests.ContractInput r) {
     return contracts.write(null, r);
   }
 
   @PutMapping("/contracts/{id}")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ContractView update(@PathVariable Long id, @Valid @RequestBody Requests.ContractInput r) {
     return contracts.write(id, r);
   }
 
   @PostMapping("/contracts/{id}/terminate")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ContractView terminate(@PathVariable Long id, @Valid @RequestBody Requests.EndContract r) {
     return contracts.terminate(id, r.endDate());
   }
 
   @PostMapping("/contracts/{id}/renew")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public ContractView renew(@PathVariable Long id, @Valid @RequestBody Requests.RenewContract r) {
     return contracts.renew(id, r.endDate());
   }
@@ -77,7 +77,7 @@ public class ContractController {
   }
 
   @PutMapping("/contracts/{id}/services")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public List<SubscriptionView> subscriptions(
       @PathVariable Long id, @Valid @RequestBody List<Requests.Subscription> r) {
     return contracts.subscriptions(id, r);
@@ -89,7 +89,7 @@ public class ContractController {
   }
 
   @PostMapping("/contracts/{id}/deposit-transactions")
-  @PreAuthorize("hasRole('OWNER')")
+  @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER')")
   public DepositView deposit(@PathVariable Long id, @Valid @RequestBody Requests.DepositInput r) {
     return contracts.deposit(id, r);
   }
