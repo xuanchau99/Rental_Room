@@ -49,7 +49,7 @@ if [ "$USE_NEON" = "1" ]; then
     echo "[*] Bỏ qua khởi động PostgreSQL local để tiết kiệm tài nguyên."
     echo ""
     echo "[2/3] Đang build và khởi động ứng dụng backend..."
-    docker compose up -d --build --wait app
+    docker compose up -d --build --wait --no-deps app
 else
     # Kiểm tra xung đột cổng 5432
     if netstat -tuln 2>/dev/null | grep -q ":5432 " || ss -tuln 2>/dev/null | grep -q ":5432 " || lsof -i :5432 &>/dev/null; then
@@ -60,7 +60,7 @@ else
     fi
 
     echo "[2/3] Đang tải, build và khởi động hệ thống (PostgreSQL + Spring Boot)..."
-    docker compose --profile local up -d --build --wait
+    docker compose up -d --build --wait
 fi
 
 echo ""

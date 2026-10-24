@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal EnableDelayedExpansion
 chcp 65001 >nul
 
@@ -93,7 +93,7 @@ if "!USE_NEON!"=="1" (
     echo [*] Bo qua khoi dong PostgreSQL local de tiet kiem tai nguyen.
     echo.
     echo [2/3] Dang build va khoi dong ung dung backend...
-    docker compose up -d --build --wait app
+    docker compose up -d --build --wait --no-deps app
 ) else (
     REM Kiem tra xung dot cong 5432
     netstat -ano | findstr /C:":5432 " | findstr "LISTENING" >nul 2>&1
@@ -108,7 +108,7 @@ if "!USE_NEON!"=="1" (
     echo [2/3] Dang build va khoi dong he thong (PostgreSQL va Spring Boot Backend)...
     echo Qua trinh nay se tu dong khoi tao co so du lieu va du lieu mau.
     echo.
-    docker compose --profile local up -d --build --wait
+    docker compose up -d --build --wait
 )
 
 if %ERRORLEVEL% neq 0 (

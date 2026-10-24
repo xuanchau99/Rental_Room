@@ -55,7 +55,7 @@ echo ""
 
 # 4. Khởi động app kết nối Neon DB
 echo "[2/2] Đang build và khởi động ứng dụng kết nối tới Neon DB Cloud..."
-docker compose up -d --build --wait app
+docker compose up -d --build --wait --no-deps app
 
 echo ""
 echo "===================================================================="

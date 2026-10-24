@@ -2,7 +2,6 @@ services:
   postgres:
     image: postgres:17
     restart: unless-stopped
-    profiles: ["local"]
     environment:
       POSTGRES_DB: home_management
       POSTGRES_USER: rental

@@ -13,4 +13,4 @@ USER 10001
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=5 \
     CMD curl -fsS http://localhost:${SERVER_PORT:-8080}/actuator/health > /dev/null || exit 1
-ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-Djavax.net.debug=ssl,handshake", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-jar", "/app/app.jar"]

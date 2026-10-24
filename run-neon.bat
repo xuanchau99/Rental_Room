@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal EnableDelayedExpansion
 chcp 65001 >nul
 
@@ -101,7 +101,7 @@ REM 4. Chay Backend ket noi truc tiep toi Neon DB
 echo [2/2] Dang build va khoi dong ung dung ket noi toi Neon DB Cloud...
 echo.
 
-docker compose up -d --build --wait app
+docker compose up -d --build --wait --no-deps app
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [LOI] Khoi dong ung dung khong thanh cong!
