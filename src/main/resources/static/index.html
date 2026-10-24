@@ -60,6 +60,15 @@
           <select id="period-month" aria-label="Tháng"></select>
           <input id="period-year" type="number" min="2000" max="9999" aria-label="Năm">
         </div>
+        <div id="user-badge" class="user-badge" title="Tài khoản đăng nhập">
+          <div class="user-avatar" id="user-avatar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="user-meta">
+            <span class="user-name" id="user-display-name">---</span>
+            <span class="user-role-badge" id="user-display-role">---</span>
+          </div>
+        </div>
         <button id="refresh-button" type="button" class="secondary btn-icon">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
           <span>Làm mới</span>
@@ -116,13 +125,23 @@
         <div class="two-columns">
           <article class="panel">
             <div class="panel-header">
-              <h3>Phòng chưa đóng tiền</h3>
+              <div class="panel-title-group">
+                <span class="panel-title-icon icon-rose">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </span>
+                <h3>Phòng chưa đóng tiền</h3>
+              </div>
             </div>
             <div id="debt-list" class="empty">Chưa có dữ liệu.</div>
           </article>
           <article class="panel">
             <div class="panel-header">
-              <h3>Doanh thu theo khoản</h3>
+              <div class="panel-title-group">
+                <span class="panel-title-icon icon-emerald">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </span>
+                <h3>Doanh thu theo khoản</h3>
+              </div>
             </div>
             <div id="revenue-list" class="empty">Chưa có dữ liệu.</div>
           </article>

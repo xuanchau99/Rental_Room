@@ -428,6 +428,59 @@ button:disabled {
   box-shadow: none;
 }
 
+/* User Badge in Topbar */
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px 12px 4px 6px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+}
+
+.user-badge:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: var(--text-main);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-hover);
+  letter-spacing: 0.02em;
+}
+
 /* Tabs Navigation */
 .tabs {
   display: flex;
@@ -574,10 +627,10 @@ button:disabled {
   margin-bottom: 20px;
 }
 
-/* Stats Metrics Cards */
+/* Stats Metrics Cards (12-column layout for perfect alignment) */
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -586,17 +639,30 @@ button:disabled {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px 22px;
+  padding: 18px 20px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-fast);
 }
 
 .stat:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--border-strong);
+}
+
+/* 4 Thẻ phòng (Tổng phòng, Đang thuê, Phòng trống, Đang bảo trì): Mỗi thẻ chiếm 3/12 = 1 hàng 4 thẻ */
+.stat.stat-room {
+  grid-column: span 3;
+}
+
+/* 3 Thẻ tài chính (Đã lập HĐ, Đã thu, Còn nợ): Mỗi thẻ chiếm 4/12 = 1 hàng 3 thẻ */
+.stat.stat-finance {
+  grid-column: span 4;
 }
 
 .stat::before {
@@ -609,25 +675,82 @@ button:disabled {
   background: #cbd5e1;
 }
 
-/* Đổi màu dải accent phía trên các thẻ Stat theo vai trò */
-.stat:nth-child(1)::before { background: #64748b; }
-.stat:nth-child(2)::before { background: #10b981; }
-.stat:nth-child(3)::before { background: #f59e0b; }
-.stat:nth-child(4)::before { background: #3b82f6; }
-.stat:nth-child(5)::before { background: #10b981; }
-.stat:nth-child(6)::before { background: #f43f5e; }
+/* Accent bar theo vai trò dữ liệu */
+.stat.stat-slate::before { background: #64748b; }
+.stat.stat-emerald::before { background: #10b981; }
+.stat.stat-amber::before { background: #f59e0b; }
+.stat.stat-purple::before { background: #8b5cf6; }
+.stat.stat-blue::before { background: #3b82f6; }
+.stat.stat-rose::before { background: #f43f5e; }
 
-.stat span {
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stat-label {
   display: block;
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 8px;
 }
 
-.stat strong {
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.stat:hover .stat-icon {
+  transform: scale(1.08);
+}
+
+.stat-icon-slate {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.stat-icon-amber {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.stat-icon-purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.stat-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.stat-icon-rose {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.stat-value {
   display: block;
   font-family: var(--font-heading);
   font-size: 1.65rem;
@@ -635,6 +758,83 @@ button:disabled {
   color: var(--text-main);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* Panel Headers & Icons */
+.panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title-group h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.panel-title-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.panel-title-icon.icon-rose {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.panel-title-icon.icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.kv-with-icon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kv-with-icon:last-child {
+  border-bottom: none;
+}
+
+.kv-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.kv-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.kv-icon.icon-rose {
+  color: #e11d48;
+}
+
+.text-good {
+  color: #059669 !important;
+}
+
+.text-bad {
+  color: #e11d48 !important;
 }
 
 /* Table Wrappers & Tables */
@@ -1058,6 +1258,10 @@ dialog::backdrop {
     width: 100%;
     justify-content: space-between;
   }
+  .user-badge {
+    width: 100%;
+    margin-bottom: 2px;
+  }
   .top-actions > button {
     flex: 1 1 calc(33.333% - 6px);
     min-width: 90px;
@@ -1122,16 +1326,32 @@ dialog::backdrop {
     gap: 10px;
     margin-bottom: 16px;
   }
+  .stat.stat-room {
+    grid-column: span 1;
+  }
+  .stat.stat-finance {
+    grid-column: span 2;
+  }
   .stat {
     padding: 12px 14px;
     border-radius: var(--radius-md);
   }
-  .stat span {
-    font-size: 0.72rem;
-    margin-bottom: 4px;
+  .stat-header {
+    margin-bottom: 6px;
   }
-  .stat strong {
-    font-size: 1.22rem;
+  .stat-icon {
+    width: 26px;
+    height: 26px;
+  }
+  .stat-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+  }
+  .stat-value {
+    font-size: 1.25rem;
   }
   /* Khối điện nước */
   .meter-columns {
@@ -1228,7 +1448,11 @@ dialog::backdrop {
   .stats {
     grid-template-columns: 1fr;
   }
-  .stat strong {
+  .stat.stat-room,
+  .stat.stat-finance {
+    grid-column: span 1;
+  }
+  .stat-value {
     font-size: 1.25rem;
   }
   .top-actions > button {

@@ -117,6 +117,10 @@ public class AuthService {
             .claim("role", user.getRole().name())
             .claim("userId", user.getId());
 
+    if (user.getFullName() != null && !user.getFullName().isBlank()) {
+      claimsBuilder.claim("fullName", user.getFullName());
+    }
+
     Long ownerId = user.resolveOwnerId();
     if (ownerId != null) {
       claimsBuilder.claim("ownerId", ownerId);

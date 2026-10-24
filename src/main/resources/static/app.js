@@ -34,18 +34,64 @@ function setNotice(message, error = false) {
   element.hidden = !message;
   if (message) window.scrollTo({top: 0, behavior: "smooth"});
 }
+function decodeJwt(token) {
+  if (!token) return null;
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    try {
+      return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    } catch {
+      return null;
+    }
+  }
+}
+function updateUserBadge() {
+  const payload = decodeJwt(state.tokens?.accessToken);
+  const nameEl = $("user-display-name");
+  const roleEl = $("user-display-role");
+  const badgeEl = $("user-badge");
+  if (!nameEl || !roleEl) return;
+  if (!payload) {
+    nameEl.textContent = "---";
+    roleEl.textContent = "---";
+    return;
+  }
+  const roleMap = {
+    SUPER_ADMIN: "Quản trị viên",
+    OWNER: "Chủ trọ",
+    STAFF: "Nhân viên"
+  };
+  const roleText = roleMap[payload.role] || payload.role || "Người dùng";
+  const displayName = payload.fullName || payload.sub || "Người dùng";
+  nameEl.textContent = displayName;
+  roleEl.textContent = roleText;
+  if (badgeEl) {
+    badgeEl.title = `Tài khoản: ${displayName} (${roleText})`;
+  }
+}
 function clearSession() {
   state.tokens = null;
   sessionStorage.removeItem("rentalTokens");
   $("app").hidden = true;
   $("login-screen").hidden = false;
   $("password").value = "";
+  updateUserBadge();
 }
 function saveSession(tokens) {
   state.tokens = tokens;
   sessionStorage.setItem("rentalTokens", JSON.stringify(tokens));
   $("login-screen").hidden = true;
   $("app").hidden = false;
+  updateUserBadge();
 }
 async function refreshToken() {
   if (!state.tokens?.refreshToken) return false;
@@ -143,26 +189,56 @@ function badge(status) {
   return node("span", `badge ${["VACANT", "PAID"].includes(status) ? "good" : ["OVERDUE", "MAINTENANCE"].includes(status) ? "bad" : "warn"}`, label);
 }
 function renderOverview() {
-  const summary = state.dashboard || {totalRooms: 0, occupied: 0, vacant: 0, billed: 0, paid: 0, outstanding: 0, debts: [], rent: 0, electricity: 0, water: 0, services: 0, other: 0, discounts: 0};
+  const summary = state.dashboard || {totalRooms: 0, occupied: 0, vacant: 0, maintenance: 0, billed: 0, paid: 0, outstanding: 0, debts: [], rent: 0, electricity: 0, water: 0, services: 0, other: 0, discounts: 0};
   const stats = [
-    ["Tổng phòng", summary.totalRooms || 0], ["Đang thuê", summary.occupied || 0], ["Phòng trống", summary.vacant || 0],
-    ["Đã lập hóa đơn", money(summary.billed)], ["Đã thu", money(summary.paid)], ["Còn nợ", money(summary.outstanding)]
+    {label: "Tổng phòng", value: summary.totalRooms || 0, group: "room", color: "slate", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`},
+    {label: "Đang thuê", value: summary.occupied || 0, group: "room", color: "emerald", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>`},
+    {label: "Phòng trống", value: summary.vacant || 0, group: "room", color: "amber", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h20"/><path d="M13 20V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16"/><circle cx="9" cy="12" r="1"/></svg>`},
+    {label: "Đang bảo trì", value: summary.maintenance || 0, group: "room", color: "purple", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`},
+    {label: "Đã lập hóa đơn", value: money(summary.billed), group: "finance", color: "blue", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-8"/><path d="M16 12h-8"/><path d="M12 16h-4"/></svg>`},
+    {label: "Đã thu", value: money(summary.paid), group: "finance", color: "emerald", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>`},
+    {label: "Còn nợ", value: money(summary.outstanding), group: "finance", color: "rose", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`}
   ];
   const target = $("stats"); target.replaceChildren();
-  stats.forEach(([label, value]) => {
-    const card = node("div", "stat"); card.append(node("span", "", label), node("strong", "", value)); target.append(card);
+  stats.forEach(({label, value, group, color, icon}) => {
+    const card = node("div", `stat stat-${group} stat-${color}`);
+    const header = node("div", "stat-header");
+    header.append(node("span", "stat-label", label));
+    const iconWrapper = node("div", `stat-icon stat-icon-${color}`);
+    iconWrapper.innerHTML = icon;
+    header.append(iconWrapper);
+    card.append(header, node("strong", "stat-value", value));
+    target.append(card);
   });
   const debts = $("debt-list"); debts.replaceChildren();
   if (!summary.debts || !summary.debts.length) debts.append(node("div", "empty", "Không có hóa đơn còn nợ trong kỳ."));
   (summary.debts || []).forEach((debt) => {
-    const row = node("div", "kv"); row.append(node("span", "", debt.roomNumber), node("strong", "", money(debt.outstanding))); debts.append(row);
+    const row = node("div", "kv kv-with-icon");
+    const labelSpan = node("span", "kv-label");
+    const iconEl = node("span", "kv-icon icon-rose");
+    iconEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    labelSpan.append(iconEl, document.createTextNode(`Phòng ${debt.roomNumber}`));
+    row.append(labelSpan, node("strong", "text-bad", money(debt.outstanding)));
+    debts.append(row);
   });
   const revenue = $("revenue-list"); revenue.replaceChildren();
-  [["Tiền phòng", summary.rent], ["Tiền điện", summary.electricity], ["Tiền nước", summary.water],
-    ["Dịch vụ (gồm Wi-Fi)", summary.services], ["Khoản khác", summary.other], ["Giảm giá", -Number(summary.discounts || 0)]]
-    .forEach(([label, amount]) => {
-      const row = node("div", "kv"); row.append(node("span", "", label), node("strong", "", money(amount))); revenue.append(row);
-    });
+  const revenueItems = [
+    ["Tiền phòng", summary.rent, `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`],
+    ["Tiền điện", summary.electricity, `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`],
+    ["Tiền nước", summary.water, `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`],
+    ["Dịch vụ (Wi-Fi)", summary.services, `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`],
+    ["Khoản khác", summary.other, `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" x2="12" y1="12" y2="12"/></svg>`],
+    ["Giảm giá", -Number(summary.discounts || 0), `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 5-7 7-7-7"/></svg>`]
+  ];
+  revenueItems.forEach(([label, amount, iconSvg]) => {
+    const row = node("div", "kv kv-with-icon");
+    const labelSpan = node("span", "kv-label");
+    const iconEl = node("span", "kv-icon");
+    iconEl.innerHTML = iconSvg;
+    labelSpan.append(iconEl, document.createTextNode(label));
+    row.append(labelSpan, node("strong", amount < 0 ? "text-good" : "", money(amount)));
+    revenue.append(row);
+  });
 }
 function fillSelect(select, entries, placeholder) {
   select.replaceChildren(new Option(placeholder, ""));
@@ -440,5 +516,6 @@ $("contract-start").value = today();
 try { state.tokens = JSON.parse(sessionStorage.getItem("rentalTokens") || "null"); } catch { state.tokens = null; }
 if (state.tokens) {
   $("login-screen").hidden = true; $("app").hidden = false;
+  updateUserBadge();
   reload().catch((error) => setNotice(error.message, true));
 }
