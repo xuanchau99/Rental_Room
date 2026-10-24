@@ -52,7 +52,7 @@ public class DataSourceConfig {
 
     if (url != null) {
       url = url.replaceAll("\\s+", "");
-      if (!url.contains("localhost") && !url.contains(":postgres:") && !url.contains("sslmode=")) {
+      if (!url.contains("localhost") && !url.contains("postgres") && !url.contains("sslmode=")) {
         url += (url.contains("?") ? "&" : "?") + "sslmode=require";
       }
       if (url.contains(":6543") && !url.contains("prepareThreshold=")) {

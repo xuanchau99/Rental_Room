@@ -3,7 +3,23 @@
 Backend Java 21, Spring Boot 3.5.16, PostgreSQL, Flyway, JWT và Swagger.
 Đặc tả: [docs/requirements.md](docs/requirements.md).
 
-## Chạy local
+## Chạy nhanh (1-Click)
+
+### Cách 1: Chạy với PostgreSQL Local (Mặc định trong Docker)
+- **Windows**: Nhấp đúp vào file `run.bat`.
+- **Linux / macOS**: `./run.sh`
+- Tự động kiểm tra Docker Desktop, khởi động PostgreSQL và backend, mở trình duyệt tại `http://localhost:8080/`.
+
+### Cách 2: Chạy với Neon DB Cloud (Không cần sửa code)
+- **Windows**: Nhấp đúp vào file `run-neon.bat`.
+- **Linux / macOS**: `./run-neon.sh`
+- Tự động kết nối trực tiếp tới cơ sở dữ liệu Neon DB trên đám mây (không cần chạy container database trên máy).
+- Bạn có thể tùy chỉnh thông tin Neon DB bất kỳ lúc nào trong file `.env` (xem mẫu tại `.env.example`).
+
+### Dừng hệ thống
+- Chạy `stop.bat` (Windows) hoặc `./stop.sh` (Linux / macOS).
+
+## Chạy thủ công
 
 Cần Docker Desktop. Mở PowerShell thường tại thư mục project (không cần quyền Administrator):
 
