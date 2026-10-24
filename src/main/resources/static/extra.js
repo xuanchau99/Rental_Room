@@ -344,6 +344,18 @@
     });
   });
 
+  // Đổi mật khẩu tài khoản
+  $("change-password-button")?.addEventListener("click", () => {
+    openEditor("Đổi mật khẩu tài khoản", [
+      {name: "currentPassword", label: "Mật khẩu hiện tại *", type: "password", required: true},
+      {name: "newPassword", label: "Mật khẩu mới (ít nhất 5 ký tự) *", type: "password", required: true}
+    ], async (data) => {
+      const tokens = await api("/auth/change-password", {method: "POST", body: data});
+      if (tokens) saveSession(tokens);
+      setNotice("Đã đổi mật khẩu thành công.");
+    });
+  });
+
   // Xuất file Excel
   $("export-excel")?.addEventListener("click", async () => {
     const {month, year} = period();
